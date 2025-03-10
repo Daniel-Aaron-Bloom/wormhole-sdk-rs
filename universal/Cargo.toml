@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "deploys",
     "io",
     "raw-vaas"
 ]

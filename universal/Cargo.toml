@@ -28,3 +28,4 @@ ruint = { version = "1.12", default-features = false }
 serde = "1.0"
 serde_json = "1.0"
 wormhole-io = { path = "./io" }
+wormhole-deploys = { path = "./deploys" }

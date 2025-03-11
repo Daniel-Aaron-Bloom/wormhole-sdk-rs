@@ -5,15 +5,16 @@ use std::{
     ops::{Deref, DerefMut},
 };
 
+use wormhole_deploys::ChainId;
+
 #[cfg(feature = "alloy")]
 use alloy_primitives::{Address, FixedBytes, Uint};
 
-pub trait Readable {
+pub trait Readable: Sized {
     const SIZE: Option<usize>;
 
     fn read<R>(reader: &mut R) -> io::Result<Self>
     where
-        Self: Sized,
         R: io::Read;
 }
 
@@ -169,7 +170,6 @@ impl<const N: usize> Readable for [u8; N] {
 
     fn read<R>(reader: &mut R) -> io::Result<Self>
     where
-        Self: Sized,
         R: io::Read,
     {
         let mut buf = [0; N];
@@ -198,7 +198,6 @@ where
     const SIZE: Option<usize> = None;
     fn read<R>(reader: &mut R) -> io::Result<Self>
     where
-        Self: Sized,
         R: io::Read,
     {
         match bool::read(reader)? {
@@ -279,7 +278,6 @@ impl<T: Readable, const LEN: usize> Readable for WriteableArray<T, LEN> {
     };
     fn read<R>(reader: &mut R) -> io::Result<Self>
     where
-        Self: Sized,
         R: io::Read,
     {
         struct Collector<T, const N: usize>([T; N]);
@@ -310,6 +308,29 @@ impl<T: Writeable, const LEN: usize> Writeable for WriteableArray<T, LEN> {
             s.write(writer)?;
         }
         Ok(())
+    }
+}
+
+impl Readable for ChainId {
+    const SIZE: Option<usize> = u16::SIZE;
+
+    fn read<R>(reader: &mut R) -> io::Result<Self>
+    where
+        R: io::Read,
+    {
+        u16::read(reader).map(Self::from_u16)
+    }
+}
+
+impl Writeable for ChainId {
+    fn written_size(&self) -> usize {
+        self.to_u16().written_size()
+    }
+    fn write<W>(&self, writer: &mut W) -> io::Result<()>
+    where
+        W: io::Write,
+    {
+        self.to_u16().write(writer)
     }
 }
 
@@ -410,7 +431,6 @@ where
 
     fn read<R>(reader: &mut R) -> io::Result<Self>
     where
-        Self: Sized,
         R: io::Read,
     {
         let len = Length::read(reader)?;
@@ -457,7 +477,6 @@ const _: () = {
 
         fn read<R>(reader: &mut R) -> io::Result<Self>
         where
-            Self: Sized,
             R: io::Read,
         {
             let mut buf = [0; N];
@@ -484,7 +503,6 @@ const _: () = {
 
         fn read<R>(reader: &mut R) -> io::Result<Self>
         where
-            Self: Sized,
             R: io::Read,
         {
             let mut buf = [0u8; BITS];
@@ -515,7 +533,6 @@ const _: () = {
 
         fn read<R>(reader: &mut R) -> io::Result<Self>
         where
-            Self: Sized,
             R: io::Read,
         {
             FixedBytes::<20>::read(reader).map(Self)

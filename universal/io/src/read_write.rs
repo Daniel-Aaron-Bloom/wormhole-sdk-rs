@@ -1,6 +1,16 @@
-use std::{io, marker::PhantomData};
+use std::{
+    array, io, iter,
+    marker::PhantomData,
+    mem,
+    ops::{Deref, DerefMut},
+};
+
+#[cfg(feature = "alloy")]
+use alloy_primitives::{Address, FixedBytes, Uint};
 
 pub trait Readable {
+    const SIZE: Option<usize>;
+
     fn read<R>(reader: &mut R) -> io::Result<Self>
     where
         Self: Sized,
@@ -11,9 +21,19 @@ pub trait Writeable {
     fn write<W>(&self, writer: &mut W) -> io::Result<()>
     where
         W: io::Write;
+
+    fn written_size(&self) -> usize;
+
+    fn to_vec(&self) -> Vec<u8> {
+        let mut buf = Vec::with_capacity(self.written_size());
+        self.write(&mut buf).expect("no alloc failure");
+        buf
+    }
 }
 
 impl Readable for u8 {
+    const SIZE: Option<usize> = Some(1);
+
     fn read<R>(reader: &mut R) -> io::Result<Self>
     where
         R: io::Read,
@@ -25,6 +45,10 @@ impl Readable for u8 {
 }
 
 impl Writeable for u8 {
+    fn written_size(&self) -> usize {
+        <Self as Readable>::SIZE.unwrap()
+    }
+
     fn write<W>(&self, writer: &mut W) -> io::Result<()>
     where
         W: io::Write,
@@ -34,6 +58,8 @@ impl Writeable for u8 {
 }
 
 impl Readable for bool {
+    const SIZE: Option<usize> = Some(1);
+
     fn read<R>(reader: &mut R) -> io::Result<Self>
     where
         R: io::Read,
@@ -50,6 +76,10 @@ impl Readable for bool {
 }
 
 impl Writeable for bool {
+    fn written_size(&self) -> usize {
+        <Self as Readable>::SIZE.unwrap()
+    }
+
     fn write<W>(&self, writer: &mut W) -> io::Result<()>
     where
         W: io::Write,
@@ -58,54 +88,101 @@ impl Writeable for bool {
     }
 }
 
-macro_rules! impl_for_int {
-    ($type:ty) => {
-        impl Readable for $type {
-            fn read<R>(reader: &mut R) -> io::Result<Self>
-            where
-                R: io::Read,
-            {
-                let mut buf = [0u8; std::mem::size_of::<$type>()];
-                reader.read_exact(&mut buf)?;
-                Ok(Self::from_be_bytes(buf))
-            }
-        }
+impl Readable for u16 {
+    fn read<R>(reader: &mut R) -> io::Result<Self>
+    where
+        R: io::Read,
+    {
+        let mut buf = [0u8; 2];
+        reader.read_exact(&mut buf)?;
+        Ok(u16::from_be_bytes(buf))
+    }
 
-        impl Writeable for $type {
-            fn write<W>(&self, writer: &mut W) -> io::Result<()>
-            where
-                W: io::Write,
-            {
-                writer.write_all(&self.to_be_bytes())
-            }
-        }
-    };
+    const SIZE: Option<usize> = Some(2);
 }
 
-impl_for_int!(u16);
-impl_for_int!(u32);
-impl_for_int!(u64);
-impl_for_int!(u128);
+impl Writeable for u16 {
+    fn written_size(&self) -> usize {
+        <Self as Readable>::SIZE.unwrap()
+    }
 
-impl_for_int!(i8);
-impl_for_int!(i16);
-impl_for_int!(i32);
-impl_for_int!(i64);
-impl_for_int!(i128);
+    fn write<W>(&self, writer: &mut W) -> io::Result<()>
+    where
+        W: io::Write,
+    {
+        writer.write_all(&self.to_be_bytes())
+    }
+}
+
+impl Readable for u32 {
+    const SIZE: Option<usize> = Some(4);
+
+    fn read<R>(reader: &mut R) -> io::Result<Self>
+    where
+        R: io::Read,
+    {
+        let mut buf = [0u8; 4];
+        reader.read_exact(&mut buf)?;
+        Ok(u32::from_be_bytes(buf))
+    }
+}
+
+impl Writeable for u32 {
+    fn written_size(&self) -> usize {
+        <Self as Readable>::SIZE.unwrap()
+    }
+    fn write<W>(&self, writer: &mut W) -> io::Result<()>
+    where
+        W: io::Write,
+    {
+        writer.write_all(&self.to_be_bytes())
+    }
+}
+
+impl Readable for u64 {
+    const SIZE: Option<usize> = Some(8);
+
+    fn read<R>(reader: &mut R) -> io::Result<Self>
+    where
+        R: io::Read,
+    {
+        let mut buf = [0u8; 8];
+        reader.read_exact(&mut buf)?;
+        Ok(u64::from_be_bytes(buf))
+    }
+}
+
+impl Writeable for u64 {
+    fn written_size(&self) -> usize {
+        <Self as Readable>::SIZE.unwrap()
+    }
+    fn write<W>(&self, writer: &mut W) -> io::Result<()>
+    where
+        W: io::Write,
+    {
+        writer.write_all(&self.to_be_bytes())
+    }
+}
 
 impl<const N: usize> Readable for [u8; N] {
+    const SIZE: Option<usize> = Some(N);
+
     fn read<R>(reader: &mut R) -> io::Result<Self>
     where
         Self: Sized,
         R: io::Read,
     {
-        let mut buf = [0u8; N];
+        let mut buf = [0; N];
         reader.read_exact(&mut buf)?;
         Ok(buf)
     }
 }
 
 impl<const N: usize> Writeable for [u8; N] {
+    fn written_size(&self) -> usize {
+        <u8 as Readable>::SIZE.unwrap()
+    }
+
     fn write<W>(&self, writer: &mut W) -> io::Result<()>
     where
         W: io::Write,
@@ -114,50 +191,11 @@ impl<const N: usize> Writeable for [u8; N] {
     }
 }
 
-macro_rules! impl_for_int_array {
-    ($type:ty) => {
-        impl<const N: usize> Readable for [$type; N] {
-            fn read<R>(reader: &mut R) -> io::Result<Self>
-            where
-                R: io::Read,
-            {
-                let mut buf = [Default::default(); N];
-                for i in 0..N {
-                    buf[i] = <$type>::read(reader)?;
-                }
-                Ok(buf)
-            }
-        }
-
-        impl<const N: usize> Writeable for [$type; N] {
-            fn write<W>(&self, writer: &mut W) -> io::Result<()>
-            where
-                W: io::Write,
-            {
-                for i in 0..N {
-                    self[i].write(writer)?;
-                }
-                Ok(())
-            }
-        }
-    };
-}
-
-impl_for_int_array!(u16);
-impl_for_int_array!(u32);
-impl_for_int_array!(u64);
-impl_for_int_array!(u128);
-
-impl_for_int_array!(i8);
-impl_for_int_array!(i16);
-impl_for_int_array!(i32);
-impl_for_int_array!(i64);
-impl_for_int_array!(i128);
-
 impl<T> Readable for Option<T>
 where
     T: Readable,
 {
+    const SIZE: Option<usize> = None;
     fn read<R>(reader: &mut R) -> io::Result<Self>
     where
         Self: Sized,
@@ -174,6 +212,12 @@ impl<T> Writeable for Option<T>
 where
     T: Writeable,
 {
+    fn written_size(&self) -> usize {
+        match self {
+            Some(value) => true.written_size() + value.written_size(),
+            None => false.written_size(),
+        }
+    }
     fn write<W>(&self, writer: &mut W) -> io::Result<()>
     where
         W: io::Write,
@@ -188,32 +232,129 @@ where
     }
 }
 
-/// Wrapper for `Vec<u8>`. Encoding is similar to Borsh, where the length is encoded as u32 (but in
-/// this case, it's big endian).
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct WriteableBytes<L>
-where
-    u32: From<L>,
-    L: Sized + Readable + Writeable + TryFrom<usize>,
-{
-    phantom: PhantomData<L>,
-    inner: Vec<u8>,
+/// Wrapper for `Vec<u8>` or similar. Encoding is similar to Borsh, where the length is encoded as `u32` by default.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct WriteableArray<T, const LEN: usize>(pub [T; LEN]);
+
+impl<T: Default, const LEN: usize> Default for WriteableArray<T, LEN> {
+    fn default() -> Self {
+        Self::new(array::from_fn(|_| T::default()))
+    }
 }
 
-impl<L> WriteableBytes<L>
+impl<T, const LEN: usize> WriteableArray<T, LEN> {
+    pub const fn new(value: [T; LEN]) -> Self {
+        WriteableArray(value)
+    }
+    pub fn into_inner(self) -> [T; LEN] {
+        self.0
+    }
+}
+
+impl<T, const LEN: usize> From<[T; LEN]> for WriteableArray<T, LEN> {
+    fn from(value: [T; LEN]) -> Self {
+        Self::new(value)
+    }
+}
+
+impl<T, const LEN: usize> Deref for WriteableArray<T, LEN> {
+    type Target = [T; LEN];
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<T, const LEN: usize> DerefMut for WriteableArray<T, LEN> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl<T: Readable, const LEN: usize> Readable for WriteableArray<T, LEN> {
+    const SIZE: Option<usize> = match T::SIZE {
+        Some(t) => Some(t * LEN),
+        None => None,
+    };
+    fn read<R>(reader: &mut R) -> io::Result<Self>
+    where
+        Self: Sized,
+        R: io::Read,
+    {
+        struct Collector<T, const N: usize>([T; N]);
+
+        impl<T, const N: usize> FromIterator<T> for Collector<T, N> {
+            fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
+                let mut iter = iter.into_iter();
+                let res: [_; N] = std::array::from_fn(|_| iter.next().unwrap());
+                Collector(res)
+            }
+        }
+        iter::repeat_with(|| Readable::read(reader))
+            .collect::<io::Result<Collector<_, LEN>>>()
+            .map(|v| WriteableArray(v.0))
+    }
+}
+
+impl<T: Writeable, const LEN: usize> Writeable for WriteableArray<T, LEN> {
+    fn written_size(&self) -> usize {
+        self.0.iter().map(|s| s.written_size()).sum()
+    }
+
+    fn write<W>(&self, writer: &mut W) -> io::Result<()>
+    where
+        W: io::Write,
+    {
+        for s in self.iter() {
+            s.write(writer)?;
+        }
+        Ok(())
+    }
+}
+
+/// Wrapper for `Vec<u8>` or similar. Encoding is similar to Borsh, where the length is encoded as `u32` by default.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[repr(transparent)]
+pub struct WriteableSequence<Length, Sequence>
 where
-    u32: From<L>,
-    L: Sized + Readable + Writeable + TryFrom<usize>,
+    usize: TryInto<Length>,
+    for<'a> &'a Sequence: IntoIterator<IntoIter: ExactSizeIterator>,
+    Sequence: ?Sized,
 {
-    pub fn new(inner: Vec<u8>) -> Self {
+    phantom: PhantomData<Length>,
+    sequence: Sequence,
+}
+
+impl<Length, Sequence> WriteableSequence<Length, Sequence>
+where
+    usize: TryInto<Length>,
+    for<'a> &'a Sequence: IntoIterator<IntoIter: ExactSizeIterator>,
+{
+    pub fn new(sequence: Sequence) -> Self {
         Self {
+            sequence,
             phantom: PhantomData,
-            inner,
         }
     }
 
-    pub fn try_encoded_len(&self) -> io::Result<L> {
-        match L::try_from(self.inner.len()) {
+    pub fn into_inner(self) -> Sequence {
+        self.sequence
+    }
+}
+
+impl<Length, Sequence> WriteableSequence<Length, Sequence>
+where
+    usize: TryInto<Length>,
+    for<'a> &'a Sequence: IntoIterator<IntoIter: ExactSizeIterator>,
+    Sequence: ?Sized,
+{
+    pub fn from_ref(sequence: &Sequence) -> &Self {
+        // This is safe because of repr(transparent)
+        unsafe { mem::transmute(sequence) }
+    }
+    pub fn try_encoded_len(&self) -> io::Result<Length> {
+        match self.sequence.into_iter().len().try_into() {
             Ok(len) => Ok(len),
             Err(_) => Err(io::Error::new(
                 io::ErrorKind::InvalidData,
@@ -221,203 +362,179 @@ where
             )),
         }
     }
+}
 
-    pub fn written_size(&self) -> usize {
-        std::mem::size_of::<L>() + self.inner.len()
+impl<Length, Sequence> From<Sequence> for WriteableSequence<Length, Sequence>
+where
+    usize: TryInto<Length>,
+    for<'a> &'a Sequence: IntoIterator<IntoIter: ExactSizeIterator>,
+{
+    fn from(value: Sequence) -> Self {
+        Self::new(value)
     }
 }
 
-impl<L> TryFrom<Vec<u8>> for WriteableBytes<L>
+impl<Length, Sequence> std::ops::Deref for WriteableSequence<Length, Sequence>
 where
-    u32: From<L>,
-    L: Sized + Readable + Writeable + TryFrom<usize>,
+    usize: TryInto<Length>,
+    for<'a> &'a Sequence: IntoIterator<IntoIter: ExactSizeIterator>,
+    Sequence: ?Sized,
 {
-    type Error = <L as TryFrom<usize>>::Error;
-
-    fn try_from(vec: Vec<u8>) -> Result<Self, Self::Error> {
-        match L::try_from(vec.len()) {
-            Ok(_) => Ok(Self {
-                phantom: PhantomData,
-                inner: vec,
-            }),
-            Err(e) => Err(e),
-        }
-    }
-}
-
-impl<L> From<WriteableBytes<L>> for Vec<u8>
-where
-    u32: From<L>,
-    L: Sized + Readable + Writeable + TryFrom<usize>,
-{
-    fn from(bytes: WriteableBytes<L>) -> Self {
-        bytes.inner
-    }
-}
-
-impl<L> std::ops::Deref for WriteableBytes<L>
-where
-    L: Sized + Readable + Writeable,
-    u32: From<L>,
-    L: TryFrom<usize>,
-{
-    type Target = Vec<u8>;
+    type Target = Sequence;
 
     fn deref(&self) -> &Self::Target {
-        &self.inner
+        &self.sequence
     }
 }
 
-impl<L> std::ops::DerefMut for WriteableBytes<L>
+impl<Length, Sequence> std::ops::DerefMut for WriteableSequence<Length, Sequence>
 where
-    u32: From<L>,
-    L: Sized + Readable + Writeable + TryFrom<usize>,
+    usize: TryInto<Length>,
+    for<'a> &'a Sequence: IntoIterator<IntoIter: ExactSizeIterator>,
+    Sequence: ?Sized,
 {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.inner
+        &mut self.sequence
     }
 }
 
-impl Readable for WriteableBytes<u8> {
-    fn read<R>(reader: &mut R) -> io::Result<Self>
-    where
-        Self: Sized,
-        R: io::Read,
-    {
-        let len = u8::read(reader)?;
-        let mut inner: Vec<u8> = vec![0u8; len.into()];
-        reader.read_exact(&mut inner)?;
-        Ok(Self {
-            phantom: PhantomData,
-            inner,
-        })
-    }
-}
-
-impl Readable for WriteableBytes<u16> {
-    fn read<R>(reader: &mut R) -> io::Result<Self>
-    where
-        Self: Sized,
-        R: io::Read,
-    {
-        let len = u16::read(reader)?;
-        let mut inner = vec![0u8; len.into()];
-        reader.read_exact(&mut inner)?;
-        Ok(Self {
-            phantom: PhantomData,
-            inner,
-        })
-    }
-}
-
-impl Readable for WriteableBytes<u32> {
-    fn read<R>(reader: &mut R) -> io::Result<Self>
-    where
-        Self: Sized,
-        R: io::Read,
-    {
-        let len = u32::read(reader)?;
-        match len.try_into() {
-            Ok(len) => {
-                let mut inner = vec![0u8; len];
-                reader.read_exact(&mut inner)?;
-                Ok(Self {
-                    phantom: PhantomData,
-                    inner,
-                })
-            }
-            Err(_) => Err(io::Error::new(
-                io::ErrorKind::InvalidData,
-                "u32 overflow when converting to usize",
-            )),
-        }
-    }
-}
-
-impl<L> Writeable for WriteableBytes<L>
+impl<Length, Sequence> Readable for WriteableSequence<Length, Sequence>
 where
-    u32: From<L>,
-    L: Sized + Readable + Writeable + TryFrom<usize>,
+    usize: TryInto<Length>,
+    Length: Readable + TryInto<usize>,
+    for<'a> &'a Sequence:
+        IntoIterator<IntoIter: ExactSizeIterator, Item: Deref<Target: Sized + Readable>>,
+    Sequence: for<'a> FromIterator<<<&'a Sequence as IntoIterator>::Item as Deref>::Target>,
 {
+    const SIZE: Option<usize> = None;
+
+    fn read<R>(reader: &mut R) -> io::Result<Self>
+    where
+        Self: Sized,
+        R: io::Read,
+    {
+        let len = Length::read(reader)?;
+        let len = len.try_into().map_err(|_e| {
+            io::Error::new(
+                io::ErrorKind::InvalidData,
+                "length too out of bounds for usize",
+            )
+        })?;
+        (0..len)
+            .map(|_| Readable::read(reader))
+            .collect::<io::Result<Sequence>>()
+            .map(Self::new)
+    }
+}
+
+impl<Length, Sequence> Writeable for WriteableSequence<Length, Sequence>
+where
+    usize: TryInto<Length>,
+    Length: Writeable,
+    for<'a> &'a Sequence: IntoIterator<IntoIter: ExactSizeIterator, Item: Deref<Target: Writeable>>,
+    Sequence: ?Sized,
+{
+    fn written_size(&self) -> usize {
+        self.sequence.into_iter().map(|s| s.written_size()).sum()
+    }
     fn write<W>(&self, writer: &mut W) -> io::Result<()>
     where
         W: io::Write,
     {
-        match self.try_encoded_len() {
-            Ok(len) => {
-                len.write(writer)?;
-                writer.write_all(&self.inner)
-            }
-            Err(e) => Err(e),
+        let len = self.try_encoded_len()?;
+        len.write(writer)?;
+        for s in self.sequence.into_iter() {
+            s.write(writer)?;
+        }
+        Ok(())
+    }
+}
+
+#[cfg(feature = "alloy")]
+const _: () = {
+    impl<const N: usize> Readable for FixedBytes<N> {
+        const SIZE: Option<usize> = Some(N);
+
+        fn read<R>(reader: &mut R) -> io::Result<Self>
+        where
+            Self: Sized,
+            R: io::Read,
+        {
+            let mut buf = [0; N];
+            reader.read_exact(&mut buf)?;
+            Ok(Self(buf))
         }
     }
-}
 
-#[cfg(feature = "alloy")]
-impl<const N: usize> Readable for alloy_primitives::FixedBytes<N> {
-    fn read<R>(reader: &mut R) -> io::Result<Self>
-    where
-        Self: Sized,
-        R: io::Read,
-    {
-        <[u8; N]>::read(reader).map(Self)
+    impl<const N: usize> Writeable for FixedBytes<N> {
+        fn written_size(&self) -> usize {
+            <Self as Readable>::SIZE.unwrap()
+        }
+
+        fn write<W>(&self, writer: &mut W) -> io::Result<()>
+        where
+            W: io::Write,
+        {
+            writer.write_all(&self.0)
+        }
     }
-}
 
-#[cfg(feature = "alloy")]
-impl<const N: usize> Writeable for alloy_primitives::FixedBytes<N> {
-    fn write<W>(&self, writer: &mut W) -> io::Result<()>
-    where
-        W: io::Write,
-    {
-        self.0.write(writer)
+    impl<const BITS: usize, const LIMBS: usize> Readable for Uint<BITS, LIMBS> {
+        const SIZE: Option<usize> = Some(BITS.div_ceil(8));
+
+        fn read<R>(reader: &mut R) -> io::Result<Self>
+        where
+            Self: Sized,
+            R: io::Read,
+        {
+            let mut buf = [0u8; BITS];
+            let buf = &mut buf[0..BITS.div_ceil(8)];
+            reader.read_exact(buf)?;
+            Ok(Uint::from_be_slice(buf))
+        }
     }
-}
 
-#[cfg(feature = "alloy")]
-impl<const BITS: usize, const LIMBS: usize> Readable for alloy_primitives::Uint<BITS, LIMBS> {
-    fn read<R>(reader: &mut R) -> io::Result<Self>
-    where
-        Self: Sized,
-        R: io::Read,
-    {
-        let mut buf = alloy_primitives::Uint::<BITS, LIMBS>::default().to_be_bytes_vec();
-        reader.read_exact(buf.as_mut_slice())?;
+    impl<const BITS: usize, const LIMBS: usize> Writeable for Uint<BITS, LIMBS> {
+        fn written_size(&self) -> usize {
+            <Self as Readable>::SIZE.unwrap()
+        }
 
-        Ok(alloy_primitives::Uint::try_from_be_slice(buf.as_slice()).unwrap())
+        fn write<W>(&self, writer: &mut W) -> io::Result<()>
+        where
+            W: io::Write,
+        {
+            let mut buf = [0u8; BITS];
+            let buf = &mut buf[0..BITS.div_ceil(8)];
+            self.copy_be_bytes_to(buf);
+            writer.write_all(buf)
+        }
     }
-}
 
-#[cfg(feature = "alloy")]
-impl<const BITS: usize, const LIMBS: usize> Writeable for alloy_primitives::Uint<BITS, LIMBS> {
-    fn write<W>(&self, writer: &mut W) -> io::Result<()>
-    where
-        W: io::Write,
-    {
-        writer.write_all(self.to_be_bytes_vec().as_slice())
-    }
-}
+    impl Readable for Address {
+        const SIZE: Option<usize> = Some(20);
 
-#[cfg(feature = "alloy")]
-impl Readable for alloy_primitives::Address {
-    fn read<R>(reader: &mut R) -> io::Result<Self>
-    where
-        Self: Sized,
-        R: io::Read,
-    {
-        alloy_primitives::FixedBytes::<20>::read(reader).map(Self)
+        fn read<R>(reader: &mut R) -> io::Result<Self>
+        where
+            Self: Sized,
+            R: io::Read,
+        {
+            FixedBytes::<20>::read(reader).map(Self)
+        }
     }
-}
 
-#[cfg(feature = "alloy")]
-impl Writeable for alloy_primitives::Address {
-    fn write<W>(&self, writer: &mut W) -> io::Result<()>
-    where
-        W: io::Write,
-    {
-        self.0.write(writer)
+    impl Writeable for Address {
+        fn written_size(&self) -> usize {
+            <Self as Readable>::SIZE.unwrap()
+        }
+
+        fn write<W>(&self, writer: &mut W) -> io::Result<()>
+        where
+            W: io::Write,
+        {
+            self.0.write(writer)
+        }
     }
-}
+};
 
 #[cfg(test)]
 pub mod test {
@@ -465,7 +582,7 @@ pub mod test {
 
     #[test]
     fn u64_array_read_write() {
-        let data = [1, 2, 8, 16, 32, 64, 69u64];
+        let data = WriteableArray::<u64, 7>::new([1, 2, 8, 16, 32, 64, 69u64]);
         const EXPECTED_SIZE: usize = 56;
 
         let mut encoded = Vec::<u8>::with_capacity(EXPECTED_SIZE);
@@ -479,7 +596,7 @@ pub mod test {
     #[test]
     fn variable_bytes_read_write_u8() {
         let data = b"All your base are belong to us.";
-        let bytes = WriteableBytes::<u8>::new(data.to_vec());
+        let bytes = WriteableSequence::<u8, Vec<u8>>::new(data.to_vec());
 
         let mut encoded = Vec::<u8>::with_capacity(1 + data.len());
         let mut writer = std::io::Cursor::new(&mut encoded);
@@ -492,7 +609,7 @@ pub mod test {
     #[test]
     fn variable_bytes_read_write_u16() {
         let data = b"All your base are belong to us.";
-        let bytes = WriteableBytes::<u16>::new(data.to_vec());
+        let bytes = WriteableSequence::<u16, Vec<u8>>::new(data.to_vec());
 
         let mut encoded = Vec::<u8>::with_capacity(2 + data.len());
         let mut writer = std::io::Cursor::new(&mut encoded);
@@ -505,7 +622,7 @@ pub mod test {
     #[test]
     fn variable_bytes_read_write_u32() {
         let data = b"All your base are belong to us.";
-        let bytes = WriteableBytes::<u32>::new(data.to_vec());
+        let bytes = WriteableSequence::<u32, [u8]>::from_ref(data);
 
         let mut encoded = Vec::<u8>::with_capacity(4 + data.len());
         let mut writer = std::io::Cursor::new(&mut encoded);
@@ -514,15 +631,6 @@ pub mod test {
         let expected =
             hex!("0000001f416c6c20796f75722062617365206172652062656c6f6e6720746f2075732e");
         assert_eq!(encoded, expected);
-    }
-
-    #[test]
-    fn mem_take() {
-        let data = b"All your base are belong to us.";
-        let mut bytes = WriteableBytes::<u16>::new(data.to_vec());
-
-        let taken = std::mem::take(&mut bytes);
-        assert_eq!(taken.as_slice(), data);
     }
 
     #[test]

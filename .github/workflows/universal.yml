@@ -1,73 +1,73 @@
 name: universal
 
 on:
-    push:
-        branches: [main]
-    pull_request:
+  push:
+    branches: [main]
+  pull_request:
 
 env:
-    CARGO_TERM_COLOR: always
+  CARGO_TERM_COLOR: always
 
 jobs:
-    test:
-        name: test ${{ matrix.rust }}
-        runs-on: ubuntu-latest
-        timeout-minutes: 30
-        strategy:
-            fail-fast: false
-            matrix:
-                rust: [
-                    "stable",
-                    "beta",
-                    "nightly",
-                    "1.75" # MSRV
-                ]
-        steps:
-            - uses: actions/checkout@v3
-            - uses: dtolnay/rust-toolchain@master
-              with:
-                  toolchain: ${{ matrix.rust }}
-            - uses: Swatinem/rust-cache@v2
-            - name: test
-              run: cargo test --workspace --all-features --all-targets
-              working-directory: universal
+  test:
+    name: test ${{ matrix.rust }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        rust: [
+            "stable",
+            "beta",
+            "nightly",
+            "1.85", # MSRV
+          ]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+      - uses: Swatinem/rust-cache@v2
+      - name: test
+        run: cargo test --workspace --all-features --all-targets
+        working-directory: universal
 
-    clippy:
-        name: clippy
-        runs-on: ubuntu-latest
-        timeout-minutes: 30
-        strategy:
-            fail-fast: false
-        steps:
-            - uses: actions/checkout@v3
-            - uses: dtolnay/rust-toolchain@clippy
-            - run: cargo clippy --workspace --all-features --all-targets
-              working-directory: universal
-              env:
-                  RUSTFLAGS: -Dwarnings
+  clippy:
+    name: clippy
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@clippy
+      - run: cargo clippy --workspace --all-features --all-targets
+        working-directory: universal
+        env:
+          RUSTFLAGS: -Dwarnings
 
-    docs:
-        name: docs
-        runs-on: ubuntu-latest
-        timeout-minutes: 30
-        steps:
-            - uses: actions/checkout@v3
-            - uses: dtolnay/rust-toolchain@nightly
-              with:
-                  components: rust-docs
-            - run: cargo doc --workspace --no-deps --document-private-items
-              working-directory: universal
-              env:
-                  RUSTDOCFLAGS: "--cfg docsrs -D warnings"
+  docs:
+    name: docs
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rust-docs
+      - run: cargo doc --workspace --no-deps --document-private-items
+        working-directory: universal
+        env:
+          RUSTDOCFLAGS: "--cfg docsrs -D warnings"
 
-    fmt:
-        name: fmt
-        runs-on: ubuntu-latest
-        timeout-minutes: 30
-        steps:
-            - uses: actions/checkout@v3
-            - uses: dtolnay/rust-toolchain@nightly
-              with:
-                  components: rustfmt
-            - run: cargo fmt --all --check
-              working-directory: universal
+  fmt:
+    name: fmt
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rustfmt
+      - run: cargo fmt --all --check
+        working-directory: universal

@@ -166,7 +166,7 @@ mod test {
         let expected = Message {
             a: 420,
             b: NineteenBytes(hex!("ba5edba5edba5edba5edba5edba5edba5edba5")),
-            c: b"Somebody set us up the bomb.".to_vec().try_into().unwrap(),
+            c: b"Somebody set us up the bomb.".to_vec().into(),
             d: [0x45; 4].into(),
             e: true,
         };

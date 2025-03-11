@@ -14,7 +14,7 @@ authors = ["Wormhole Labs"]
 license = "Apache-2.0"
 homepage = "https://github.com/wormholelabs-xyz/wormhole-sdk-rs"
 repository = "https://github.com/wormholelabs-xyz/wormhole-sdk-rs"
-rust-version = "1.75"
+rust-version = "1.85"
 
 [workspace.metadata.docs.rs]
 all-features = true

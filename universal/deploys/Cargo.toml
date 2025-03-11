@@ -10,5 +10,7 @@ repository.workspace = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-hex = "0.4.3"
-once_cell = "1.18.0"
+cphf = "1"
+substreams-solana-macro = "0.14.1"
+const-decoder = "0.4.0"
+const_panic = "0.2.12"

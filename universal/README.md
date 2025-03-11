@@ -1,6 +1,6 @@
 # Wormhole Univesral Crates
 
-Current version: 0.3.0. MSRV 1.75.
+Current version: 0.3.0. MSRV 1.85.
 
 ## Published
 

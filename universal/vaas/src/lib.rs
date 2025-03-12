@@ -1,4 +1,4 @@
-pub extern crate wormhole_io;
+pub extern crate wormhole_io as io;
 
 mod protocol;
 mod support;

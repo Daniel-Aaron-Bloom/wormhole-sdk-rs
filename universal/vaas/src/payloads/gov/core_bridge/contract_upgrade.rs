@@ -1,9 +1,11 @@
-use crate::{Readable, TypePrefixedPayload, Writeable};
 use alloy_primitives::FixedBytes;
+use wormhole_io::deploys::ChainId;
+
+use crate::{Readable, TypePrefixedPayload, Writeable};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ContractUpgrade {
-    pub chain: u16,
+    pub chain: ChainId,
     pub implementation: FixedBytes<32>,
 }
 

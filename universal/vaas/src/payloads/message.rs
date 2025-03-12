@@ -1,6 +1,8 @@
-use crate::{Readable, TypePrefixedPayload, Writeable};
-
 use std::io;
+
+use wormhole_io::{deploys::ChainId, WriteableSequence};
+
+use crate::{Readable, TypePrefixedPayload, Writeable};
 
 impl TypePrefixedPayload for Message {
     const TYPE: &[u8] = &[0xbb];
@@ -11,10 +13,10 @@ pub struct Message {
     pub version: u8,
     pub message_ty: u8,
     pub index: u64,
-    pub target_chain: u16,
-    pub target: Vec<u8>,
-    pub sender: Vec<u8>,
-    pub body: Vec<u8>,
+    pub target_chain: ChainId,
+    pub target: WriteableSequence<u16, Vec<u8>>,
+    pub sender: WriteableSequence<u16, Vec<u8>>,
+    pub body: WriteableSequence<u16, Vec<u8>>,
 }
 
 impl Readable for Message {
@@ -24,23 +26,13 @@ impl Readable for Message {
     where
         R: io::Read,
     {
-        let version = u8::read(reader)?;
-        let message_ty = u8::read(reader)?;
-        let index = u64::read(reader)?;
-        let target_chain = u16::read(reader)?;
-
-        let target_len = u16::read(reader)?;
-        let mut target = vec![0u8; target_len as usize];
-        reader.read_exact(&mut target)?;
-
-        let sender_len = u16::read(reader)?;
-        let mut sender = vec![0u8; sender_len as usize];
-        reader.read_exact(sender.as_mut_slice())?;
-
-        let body_len = u16::read(reader)?;
-        let mut body = vec![0u8; body_len as usize];
-        reader.read_exact(&mut body)?;
-
+        let version = Readable::read(reader)?;
+        let message_ty = Readable::read(reader)?;
+        let index = Readable::read(reader)?;
+        let target_chain = Readable::read(reader)?;
+        let target = Readable::read(reader)?;
+        let sender = Readable::read(reader)?;
+        let body = Readable::read(reader)?;
         Ok(Self {
             version,
             message_ty,
@@ -92,11 +84,11 @@ mod test {
 
         assert_eq!(message.index, 0);
         assert_eq!(message.target_chain, 0x1234);
-        assert_eq!(message.target, hex!("5678"));
+        assert_eq!(*message.target, hex!("5678"));
         assert_eq!(
-            message.sender,
+            *message.sender,
             hex!("7fa9385be102ac3eac297483dd6233d62b3e1496")
         );
-        assert_eq!(message.body, hex!("9abc"));
+        assert_eq!(*message.body, hex!("9abc"));
     }
 }

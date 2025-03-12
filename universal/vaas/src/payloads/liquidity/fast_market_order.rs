@@ -1,7 +1,7 @@
 //! Fast Market Order
 
 use crate::{
-    wormhole_io::{wormhole_deploys::ChainId, WriteableSequence},
+    io::{deploys::ChainId, WriteableSequence},
     Readable, TypePrefixedPayload, Writeable,
 };
 

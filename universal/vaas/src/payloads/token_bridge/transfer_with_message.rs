@@ -1,4 +1,5 @@
 use alloy_primitives::FixedBytes;
+use wormhole_io::deploys::ChainId;
 
 use crate::{EncodedAmount, Readable, TypePrefixedPayload, Writeable};
 
@@ -8,9 +9,9 @@ use std::io;
 pub struct TransferWithMessage {
     pub norm_amount: EncodedAmount,
     pub token_address: FixedBytes<32>,
-    pub token_chain: u16,
+    pub token_chain: ChainId,
     pub redeemer: FixedBytes<32>,
-    pub redeemer_chain: u16,
+    pub redeemer_chain: ChainId,
     pub sender: FixedBytes<32>,
     pub payload: Vec<u8>,
 }

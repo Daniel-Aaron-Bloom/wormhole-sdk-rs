@@ -1,5 +1,7 @@
-use crate::{Readable, TypePrefixedPayload, Writeable};
 use alloy_primitives::FixedBytes;
+use wormhole_io::deploys::ChainId;
+
+use crate::{Readable, TypePrefixedPayload, Writeable};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct RegisterChain {
@@ -10,7 +12,7 @@ pub struct RegisterChain {
     ///
     /// [`Governanceheader`]: crate::payloads::gov::GovernanceHeader
     _gap: FixedBytes<2>,
-    pub foreign_chain: u16,
+    pub foreign_chain: ChainId,
     pub foreign_emitter: FixedBytes<32>,
 }
 

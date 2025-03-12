@@ -1,11 +1,13 @@
-use crate::{Readable, TypePrefixedPayload, Writeable};
 use alloy_primitives::U256;
+use wormhole_io::deploys::ChainId;
+
+use crate::{Readable, TypePrefixedPayload, Writeable};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct RecoverChainId {
-    pub recovered_chain: u16,
+    pub recovered_chain: ChainId,
     pub evm_chain_id: U256,
-    pub new_chain: u16,
+    pub new_chain: ChainId,
 }
 
 impl TypePrefixedPayload for RecoverChainId {

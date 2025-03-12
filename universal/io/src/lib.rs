@@ -1,4 +1,4 @@
-pub extern crate wormhole_deploys;
+pub extern crate wormhole_deploys as deploys;
 
 mod payload;
 mod read_write;

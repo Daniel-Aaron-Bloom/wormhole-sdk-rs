@@ -1,4 +1,5 @@
 use alloy_primitives::{FixedBytes, U64};
+use wormhole_io::deploys::ChainId;
 
 use crate::{
     payloads::{self, PayloadKind},
@@ -107,7 +108,15 @@ impl Readable for VaaHeader {
 pub struct VaaBody {
     pub timestamp: u32,
     pub nonce: u32,
-    pub emitter_chain: u16,
+    #[cfg_attr(
+        feature = "serde",
+        serde(serialize_with = "wormhole_io::deploys::chain_id::serde::serialize_value")
+    )]
+    #[cfg_attr(
+        feature = "serde",
+        serde(deserialize_with = "wormhole_io::deploys::chain_id::serde::deserialize_value")
+    )]
+    pub emitter_chain: ChainId,
     pub emitter_address: FixedBytes<32>,
     pub sequence: U64,
     pub consistency_level: u8,

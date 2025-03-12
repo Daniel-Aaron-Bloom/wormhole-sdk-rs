@@ -1,4 +1,5 @@
 use alloy_primitives::FixedBytes;
+use wormhole_io::deploys::ChainId;
 
 use crate::{EncodedAmount, Readable, TypePrefixedPayload, Writeable};
 
@@ -8,9 +9,9 @@ use std::io;
 pub struct Transfer {
     pub norm_amount: EncodedAmount,
     pub token_address: FixedBytes<32>,
-    pub token_chain: u16,
+    pub token_chain: ChainId,
     pub recipient: FixedBytes<32>,
-    pub recipient_chain: u16,
+    pub recipient_chain: ChainId,
     pub norm_relayer_fee: EncodedAmount,
 }
 
@@ -62,6 +63,7 @@ mod tests {
     use crate::{payloads::token_bridge::TokenBridgeMessage, Vaa};
     use alloy_primitives::U64;
     use hex_literal::hex;
+    use wormhole_io::deploys::KnownChainId;
 
     // https://github.com/wormhole-foundation/wormhole/blob/b09a644dac97fa8e037a16765728217ff3a1d057/clients/js/parse_tests/token-bridge-transfer-1.expected
     #[test]
@@ -78,7 +80,7 @@ mod tests {
 
         assert_eq!(vaa.body.timestamp, 1646343275);
         assert_eq!(vaa.body.nonce, 47293);
-        assert_eq!(vaa.body.emitter_chain, 1);
+        assert_eq!(vaa.body.emitter_chain, KnownChainId::Solana);
         assert_eq!(
             vaa.body.emitter_address,
             hex!("c69a1b1a65dd336bf1df6a77afb501fc25db7fc0938cb08595a9ef473265cb4f")
@@ -103,12 +105,12 @@ mod tests {
                         "165809739240a0ac03b98440fe8985548e3aa683cd0d4d9df5b5659669faa301"
                     )
                     .into(),
-                    token_chain: 1,
+                    token_chain: 1.into(),
                     recipient: hex!(
                         "000000000000000000000000c10820983f33456ce7beb3a046f5a83fa34f027d"
                     )
                     .into(),
-                    recipient_chain: 2,
+                    recipient_chain: 2.into(),
                     norm_relayer_fee: EncodedAmount::ZERO,
                 }
             );
@@ -135,7 +137,7 @@ mod tests {
 
         assert_eq!(vaa.body.timestamp, 1648399073);
         assert_eq!(vaa.body.nonce, 62485);
-        assert_eq!(vaa.body.emitter_chain, 1);
+        assert_eq!(vaa.body.emitter_chain, KnownChainId::Solana);
         assert_eq!(
             vaa.body.emitter_address,
             hex!("ec7372995d5cc8732397fb0ad35c0121e0eaa90d26f828a534cab54391b3a4f5")

@@ -1,9 +1,11 @@
-use crate::{Readable, TypePrefixedPayload, Writeable};
 use alloy_primitives::U256;
+use wormhole_io::deploys::ChainId;
+
+use crate::{Readable, TypePrefixedPayload, Writeable};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SetMessageFee {
-    pub chain: u16,
+    pub chain: ChainId,
     pub fee: U256,
 }
 

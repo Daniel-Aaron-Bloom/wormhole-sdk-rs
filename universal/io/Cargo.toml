@@ -14,6 +14,7 @@ version.workspace = true
 
 [features]
 default = []
+serde = ["wormhole-deploys/serde"]
 alloy = ["dep:alloy-primitives"]
 
 [dependencies]

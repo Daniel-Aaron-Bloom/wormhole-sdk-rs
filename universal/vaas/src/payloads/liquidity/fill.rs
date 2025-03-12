@@ -1,10 +1,12 @@
 //! Fill
 
-use wormhole_io::{Readable, TypePrefixedPayload, Writeable, WriteableSequence};
+use wormhole_io::{deploys::ChainId, WriteableSequence};
+
+use crate::{Readable, TypePrefixedPayload, Writeable};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Fill {
-    pub source_chain: u16,
+    pub source_chain: ChainId,
     pub order_sender: [u8; 32],
     pub redeemer: [u8; 32],
     pub redeemer_message: WriteableSequence<u16, Vec<u8>>,
@@ -60,7 +62,7 @@ mod test {
     #[test]
     fn fill_write() {
         let fill = Fill {
-            source_chain: 69,
+            source_chain: 69.into(),
             order_sender: hex!("deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"),
             redeemer: hex!("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
             redeemer_message: b"All your base are belong to us.".to_vec().into(),

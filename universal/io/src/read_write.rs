@@ -643,6 +643,12 @@ pub mod test {
 
         let expected = hex!("001f416c6c20796f75722062617365206172652062656c6f6e6720746f2075732e");
         assert_eq!(encoded, expected);
+
+        let mut reader = std::io::Cursor::new(&mut encoded);
+        let decoded: WriteableSequence<u16, Vec<u8>> =
+            Readable::read(&mut reader).expect("read failed");
+
+        assert_eq!(bytes, decoded);
     }
 
     #[test]

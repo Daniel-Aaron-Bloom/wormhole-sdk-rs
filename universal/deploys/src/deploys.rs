@@ -1,7 +1,7 @@
 use const_decoder::{decode, Decoder};
 use cphf::{phf_ordered_map, OrderedMap, UncasedStr};
 
-use crate::{ChainId, CoreDeployment, KnownChainIds, NetEnv, Vm};
+use crate::{ChainId, CoreDeployment, KnownChainId, NetEnv, Vm};
 
 const BECH32: Decoder = Decoder::custom("qpzry9x8gf2tvdw0s3jn54khce6mua7l");
 macro_rules! hex {
@@ -37,7 +37,7 @@ macro_rules! b58 {
 }
 
 const DUMMY: CoreDeployment = CoreDeployment {
-    chain_id: ChainId::Known(KnownChainIds::Unset),
+    chain_id: ChainId::Known(KnownChainId::Unset),
     name: "",
     core_address: &[],
     token_bridge_address: None,
@@ -84,10 +84,10 @@ pub const $all: &[&CoreDeployment] = &{
     array
 };
 
-#[doc = concat!("A map indexed by [`KnownChainIds`] of all known [`", stringify!($net_env), "`](NetEnv::", stringify!($net_env), ") environments.")]
-pub const $by_id: OrderedMap<KnownChainIds, &'static CoreDeployment> = phf_ordered_map!{KnownChainIds, &'static CoreDeployment; ={
+#[doc = concat!("A map indexed by [`KnownChainId`] of all known [`", stringify!($net_env), "`](NetEnv::", stringify!($net_env), ") environments.")]
+pub const $by_id: OrderedMap<KnownChainId, &'static CoreDeployment> = phf_ordered_map!{KnownChainId, &'static CoreDeployment; ={
     const COUNT: usize = $all.len();
-    let mut data = [(KnownChainIds::Unset, &DUMMY); COUNT];
+    let mut data = [(KnownChainId::Unset, &DUMMY); COUNT];
     let mut i = 0;
     while i < $all.len() {
         data[i] = ($all[i].chain_id.to_known().expect("unknown chain"), &$all[i]);
@@ -202,7 +202,7 @@ pub mod $modi {
     $(#[doc = concat!(" * token bridge address is `\"", $token_bridge_address, "\"` ")])?
     $(#[doc = concat!(" * nft bridge address is `\"", $nft_bridge_address, "\"` ")])?
     pub const $name: CoreDeployment = CoreDeployment {
-        chain_id: ChainId::Known(KnownChainIds::$chain_id),
+        chain_id: ChainId::Known(KnownChainId::$chain_id),
         name: $name_field,
         core_address: $decoder!($core_address),
         token_bridge_address: loop {

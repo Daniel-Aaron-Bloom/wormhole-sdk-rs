@@ -1,4 +1,5 @@
 use alloy_primitives::FixedBytes;
+use wormhole_io::deploys::ChainId;
 
 use crate::{Readable, TypePrefixedPayload, Writeable};
 
@@ -7,7 +8,7 @@ use std::io;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Attestation {
     pub token_address: FixedBytes<32>,
-    pub token_chain: u16,
+    pub token_chain: ChainId,
     pub decimals: u8,
 
     pub symbol: FixedBytes<32>,
@@ -78,6 +79,7 @@ fn fixed32_to_string(fixed: FixedBytes<32>) -> String {
 mod test {
     use alloy_primitives::{FixedBytes, U64};
     use hex_literal::hex;
+    use wormhole_io::deploys::KnownChainId;
 
     use crate::{
         payloads::token_bridge::{attestation::fixed32_to_string, TokenBridgeMessage},
@@ -149,7 +151,7 @@ mod test {
 
         assert_eq!(vaa.body.timestamp, 0);
         assert_eq!(vaa.body.nonce, 2095245887);
-        assert_eq!(vaa.body.emitter_chain, 1);
+        assert_eq!(vaa.body.emitter_chain, KnownChainId::Solana);
         assert_eq!(
             vaa.body.emitter_address,
             hex!("95f83a27e90c622a98c037353f271fd8f5f57b4dc18ebf5ff75a934724bd0491")

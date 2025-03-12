@@ -22,4 +22,4 @@ serde_json = { workspace = true, optional = true }
 
 [features]
 default = []
-serde = ["dep:serde", "dep:serde_json", "alloy-primitives/serde"]
+serde = ["dep:serde", "dep:serde_json", "alloy-primitives/serde", "wormhole-io/serde"]

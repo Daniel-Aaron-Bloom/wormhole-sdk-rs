@@ -1,16 +1,15 @@
-pub use wormhole_io::{Readable, Writeable};
-
-pub mod utils;
-pub use utils::{keccak256, quorum};
-
-pub mod payloads;
-pub use payloads::{PayloadKind, TypePrefixedPayload};
+pub extern crate wormhole_io;
 
 mod protocol;
+mod support;
+
+pub mod payloads;
+pub mod utils;
+
 pub use protocol::{
     encoded_types::EncodedAmount,
     signature::GuardianSetSig,
     vaa::{Vaa, VaaBody, VaaHeader},
 };
-
-mod support;
+pub use utils::{keccak256, quorum};
+pub use wormhole_io::{Readable, TypePrefixedPayload, Writeable};

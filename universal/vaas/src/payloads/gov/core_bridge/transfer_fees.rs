@@ -9,7 +9,7 @@ pub struct TransferFees {
 }
 
 impl TypePrefixedPayload for TransferFees {
-    const TYPE: Option<u8> = Some(4);
+    const TYPE: &[u8] = &[4];
 }
 
 impl Readable for TransferFees {

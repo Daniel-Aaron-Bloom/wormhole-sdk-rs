@@ -1,41 +1,62 @@
-use std::io;
+use std::{io, marker::PhantomData};
+
+use array_util::SliceExt;
 
 use crate::{Readable, Writeable};
+
+struct TypeCheckReader<T: TypePrefixedPayload>(PhantomData<T>);
+
+impl<T: TypePrefixedPayload> Readable for TypeCheckReader<T> {
+    const SIZE: Option<usize> = Some(T::TYPE.len());
+
+    fn read<R>(reader: &mut R) -> io::Result<Self>
+    where
+        R: io::Read,
+    {
+        // If only it were possible to use `Self::Size` here
+        const CHUNK_SIZE: usize = 32;
+        let mut id_iter = T::TYPE.array_chunks_ext();
+        for id_val in id_iter.by_ref() {
+            let mut chunk = [0u8; CHUNK_SIZE];
+            reader.read_exact(&mut chunk)?;
+            if *id_val != chunk {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "Invalid payload type",
+                ));
+            }
+        }
+        let id_val = id_iter.remainder();
+        let chunk = &mut [0u8; CHUNK_SIZE][..id_val.len()];
+        reader.read_exact(chunk)?;
+        if id_val != chunk {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "Invalid payload type",
+            ));
+        }
+        Ok(Self(PhantomData))
+    }
+}
 
 /// Trait to capture common payload behavior. We do not recommend overwriting
 /// any trait methods. Simply set the type constant and implement [`Readable`]
 /// and [`Writeable`].
-pub trait TypePrefixedPayload<const N: usize>:
-    Readable + Writeable + Clone + std::fmt::Debug
-{
-    const TYPE: Option<[u8; N]>;
+pub trait TypePrefixedPayload: Readable + Writeable + Clone + std::fmt::Debug {
+    const TYPE: &[u8];
 
     /// Returns the size of the payload, including the type prefix.
     fn payload_written_size(&self) -> usize {
-        match Self::TYPE {
-            Some(_) => self.written_size() + N,
-            None => self.written_size(),
-        }
+        self.written_size() + Self::TYPE.len()
     }
 
     /// Read the payload, including the type prefix if applicable.
     fn read_payload<R: io::Read>(reader: &mut R) -> Result<Self, io::Error> {
-        match Self::TYPE {
-            Some(id) => {
-                if id != <[u8; N]>::read(reader)? {
-                    return Err(io::Error::new(
-                        io::ErrorKind::InvalidData,
-                        "Invalid payload type",
-                    ));
-                }
-
-                Readable::read(reader)
-            }
-            None => Readable::read(reader),
-        }
+        TypeCheckReader::<Self>::read(reader)?;
+        Readable::read(reader)
     }
 
-    /// Read the payload as a slice. Under the hood, this uses
+    /// Read the payload from a slice. Under the hood, this uses
     /// [read_payload](TypePrefixedPayload::read_payload).
     ///
     /// NOTE: This method will check that the slice is empty after reading the
@@ -56,14 +77,10 @@ pub trait TypePrefixedPayload<const N: usize>:
 
     /// Write the payload, including the type prefix if applicable.
     fn write_payload<W: io::Write>(&self, writer: &mut W) -> Result<(), io::Error> {
-        match Self::TYPE {
-            Some(id) => {
-                id.write(writer)?;
-                Writeable::write(self, writer)
-            }
-            None => Writeable::write(self, writer),
-        }
+        Self::TYPE.write(writer)?;
+        Writeable::write(self, writer)
     }
+
     /// Write the payload to a vector
     fn to_payload_vec(&self) -> Vec<u8> {
         let mut buf = Vec::with_capacity(self.payload_written_size());
@@ -89,8 +106,8 @@ mod test {
         pub e: bool,
     }
 
-    impl TypePrefixedPayload<1> for Message {
-        const TYPE: Option<[u8; 1]> = Some([69]);
+    impl TypePrefixedPayload for Message {
+        const TYPE: &[u8] = &[69];
     }
 
     impl Readable for Message {

@@ -16,7 +16,7 @@ pub struct TransferWithMessage {
 }
 
 impl TypePrefixedPayload for TransferWithMessage {
-    const TYPE: Option<u8> = Some(3);
+    const TYPE: &[u8] = &[3];
 }
 
 impl Readable for TransferWithMessage {

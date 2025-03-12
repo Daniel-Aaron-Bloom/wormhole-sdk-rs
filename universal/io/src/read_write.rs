@@ -89,81 +89,36 @@ impl Writeable for bool {
     }
 }
 
-impl Readable for u16 {
-    fn read<R>(reader: &mut R) -> io::Result<Self>
-    where
-        R: io::Read,
-    {
-        let mut buf = [0u8; 2];
-        reader.read_exact(&mut buf)?;
-        Ok(u16::from_be_bytes(buf))
-    }
+macro_rules! impl_for_int {
+    ($($type:ty),+ $(,)?) => {$(
+        impl Readable for $type {
+            const SIZE: Option<usize> = Some(std::mem::size_of::<$type>());
 
-    const SIZE: Option<usize> = Some(2);
+            fn read<R>(reader: &mut R) -> io::Result<Self>
+            where
+                R: io::Read,
+            {
+                let mut buf = [0u8; std::mem::size_of::<$type>()];
+                reader.read_exact(&mut buf)?;
+                Ok(Self::from_be_bytes(buf))
+            }
+        }
+
+        impl Writeable for $type {
+            fn written_size(&self) -> usize {
+                <Self as Readable>::SIZE.unwrap()
+            }
+
+            fn write<W>(&self, writer: &mut W) -> io::Result<()>
+            where
+                W: io::Write,
+            {
+                writer.write_all(&self.to_be_bytes())
+            }
+        }
+    )+};
 }
-
-impl Writeable for u16 {
-    fn written_size(&self) -> usize {
-        <Self as Readable>::SIZE.unwrap()
-    }
-
-    fn write<W>(&self, writer: &mut W) -> io::Result<()>
-    where
-        W: io::Write,
-    {
-        writer.write_all(&self.to_be_bytes())
-    }
-}
-
-impl Readable for u32 {
-    const SIZE: Option<usize> = Some(4);
-
-    fn read<R>(reader: &mut R) -> io::Result<Self>
-    where
-        R: io::Read,
-    {
-        let mut buf = [0u8; 4];
-        reader.read_exact(&mut buf)?;
-        Ok(u32::from_be_bytes(buf))
-    }
-}
-
-impl Writeable for u32 {
-    fn written_size(&self) -> usize {
-        <Self as Readable>::SIZE.unwrap()
-    }
-    fn write<W>(&self, writer: &mut W) -> io::Result<()>
-    where
-        W: io::Write,
-    {
-        writer.write_all(&self.to_be_bytes())
-    }
-}
-
-impl Readable for u64 {
-    const SIZE: Option<usize> = Some(8);
-
-    fn read<R>(reader: &mut R) -> io::Result<Self>
-    where
-        R: io::Read,
-    {
-        let mut buf = [0u8; 8];
-        reader.read_exact(&mut buf)?;
-        Ok(u64::from_be_bytes(buf))
-    }
-}
-
-impl Writeable for u64 {
-    fn written_size(&self) -> usize {
-        <Self as Readable>::SIZE.unwrap()
-    }
-    fn write<W>(&self, writer: &mut W) -> io::Result<()>
-    where
-        W: io::Write,
-    {
-        writer.write_all(&self.to_be_bytes())
-    }
-}
+impl_for_int! {u16, u32, u64, u128, i8, i16, i32, i64, i128}
 
 impl<const N: usize> Readable for [u8; N] {
     const SIZE: Option<usize> = Some(N);
@@ -188,6 +143,60 @@ impl<const N: usize> Writeable for [u8; N] {
         W: io::Write,
     {
         writer.write_all(self)
+    }
+}
+
+macro_rules! impl_for_array {
+    ($($type:ty),+ $(,)?) => {$(
+        impl<const N: usize> Readable for [$type; N] {
+            const SIZE: Option<usize> = match <$type>::SIZE {
+                Some(t) => Some(t * N),
+                None => None,
+            };
+
+            fn read<R>(reader: &mut R) -> io::Result<Self>
+            where
+                R: io::Read,
+            {
+                let mut buf = [Default::default(); N];
+                for i in 0..N {
+                    buf[i] = <$type>::read(reader)?;
+                }
+                Ok(buf)
+            }
+        }
+
+        impl<const N: usize> Writeable for [$type; N] {
+            fn written_size(&self) -> usize {
+                self.iter().map(|s| s.written_size()).sum()
+            }
+            fn write<W>(&self, writer: &mut W) -> io::Result<()>
+            where
+                W: io::Write,
+            {
+                for i in 0..N {
+                    self[i].write(writer)?;
+                }
+                Ok(())
+            }
+        }
+    )+};
+}
+
+impl_for_array! {bool, u16, u32, u64, u128, i8, i16, i32, i64, i128}
+
+impl<T: Writeable> Writeable for &'static [T] {
+    fn written_size(&self) -> usize {
+        self.iter().map(|s| s.written_size()).sum()
+    }
+    fn write<W>(&self, writer: &mut W) -> io::Result<()>
+    where
+        W: io::Write,
+    {
+        for v in self.iter() {
+            v.write(writer)?;
+        }
+        Ok(())
     }
 }
 

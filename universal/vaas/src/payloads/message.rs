@@ -1,9 +1,9 @@
-use crate::{Readable, Writeable};
+use crate::{Readable, TypePrefixedPayload, Writeable};
 
 use std::io;
 
-impl crate::payloads::TypePrefixedPayload for Message {
-    const TYPE: Option<u8> = Some(0xbb);
+impl TypePrefixedPayload for Message {
+    const TYPE: &[u8] = &[0xbb];
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

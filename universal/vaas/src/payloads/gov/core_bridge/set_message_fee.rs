@@ -8,7 +8,7 @@ pub struct SetMessageFee {
 }
 
 impl TypePrefixedPayload for SetMessageFee {
-    const TYPE: Option<u8> = Some(3);
+    const TYPE: &[u8] = &[3];
 }
 
 impl Readable for SetMessageFee {

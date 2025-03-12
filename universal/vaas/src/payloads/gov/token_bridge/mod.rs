@@ -24,7 +24,7 @@ pub enum Decree {
 }
 
 impl TypePrefixedPayload for Decree {
-    const TYPE: Option<u8> = None;
+    const TYPE: &[u8] = &[];
 }
 
 impl Writeable for Decree {
@@ -55,7 +55,7 @@ impl Readable for Decree {
     where
         R: std::io::Read,
     {
-        let decree = match Some(u8::read(reader)?) {
+        let decree = match [u8::read(reader)?].as_slice() {
             <RegisterChain as TypePrefixedPayload>::TYPE => {
                 Decree::RegisterChain(Readable::read(reader)?)
             }

@@ -67,7 +67,7 @@ pub(crate) mod fixed_bytes_as_array {
 
 #[cfg(test)]
 mod test {
-    use crate::PayloadKind;
+    use crate::payloads::PayloadKind;
     use crate::Vaa;
 
     #[test]

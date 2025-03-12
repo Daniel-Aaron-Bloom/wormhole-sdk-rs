@@ -25,7 +25,7 @@ impl Attestation {
 }
 
 impl TypePrefixedPayload for Attestation {
-    const TYPE: Option<u8> = Some(2);
+    const TYPE: &[u8] = &[2];
 }
 
 impl Readable for Attestation {

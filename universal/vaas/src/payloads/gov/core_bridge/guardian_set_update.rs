@@ -9,7 +9,7 @@ pub struct GuardianSetUpdate {
 }
 
 impl TypePrefixedPayload for GuardianSetUpdate {
-    const TYPE: Option<u8> = Some(2);
+    const TYPE: &[u8] = &[2];
 }
 
 impl Readable for GuardianSetUpdate {

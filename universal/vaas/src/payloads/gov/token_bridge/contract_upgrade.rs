@@ -8,7 +8,7 @@ pub struct ContractUpgrade {
 }
 
 impl TypePrefixedPayload for ContractUpgrade {
-    const TYPE: Option<u8> = Some(2);
+    const TYPE: &[u8] = &[2];
 }
 
 impl Readable for ContractUpgrade {

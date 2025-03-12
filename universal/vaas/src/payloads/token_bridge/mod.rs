@@ -26,7 +26,7 @@ impl Readable for TokenBridgeMessage {
         Self: Sized,
         R: std::io::Read,
     {
-        match Some(u8::read(reader)?) {
+        match [u8::read(reader)?].as_slice() {
             <Transfer as TypePrefixedPayload>::TYPE => {
                 Ok(TokenBridgeMessage::Transfer(Readable::read(reader)?))
             }
@@ -66,5 +66,5 @@ impl Writeable for TokenBridgeMessage {
 }
 
 impl TypePrefixedPayload for TokenBridgeMessage {
-    const TYPE: Option<u8> = None;
+    const TYPE: &[u8] = &[];
 }

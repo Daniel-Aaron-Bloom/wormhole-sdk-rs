@@ -68,7 +68,7 @@ pub struct GovernanceMessage<P> {
 }
 
 impl<P: TypePrefixedPayload> TypePrefixedPayload for GovernanceMessage<P> {
-    const TYPE: Option<u8> = None;
+    const TYPE: &[u8] = &[];
 }
 
 impl<P: TypePrefixedPayload> Writeable for GovernanceMessage<P> {

@@ -1,5 +1,6 @@
 pub mod cctp;
 pub mod core;
+pub mod liquidity;
 pub mod token_bridge;
 
 use crate::Payload;

@@ -9,7 +9,7 @@ pub struct RecoverChainId {
 }
 
 impl TypePrefixedPayload for RecoverChainId {
-    const TYPE: Option<u8> = Some(5);
+    const TYPE: &[u8] = &[5];
 }
 
 impl Readable for RecoverChainId {

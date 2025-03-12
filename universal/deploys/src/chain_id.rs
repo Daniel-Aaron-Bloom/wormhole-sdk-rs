@@ -139,7 +139,7 @@ impl TryFrom<ChainId> for KnownChainIds {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ChainId {
     Known(KnownChainIds),
     Unknown(u16),

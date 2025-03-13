@@ -1,4 +1,4 @@
-use alloy_primitives::FixedBytes;
+pub use alloy_primitives::FixedBytes;
 
 /// Simple keccak256 hash with configurable backend.
 #[inline]

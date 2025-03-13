@@ -230,6 +230,15 @@ impl ChainId {
     }
 }
 
+impl fmt::Display for ChainId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Known(v) => fmt::Display::fmt(v, f),
+            Self::Unknown(v) => fmt::Display::fmt(v, f),
+        }
+    }
+}
+
 impl Hash for ChainId {
     fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
         self.to_u16().hash(state);

@@ -11,7 +11,7 @@ repository.workspace = true
 
 [dependencies]
 cphf = "1"
-substreams-solana-macro = "0.14.1"
 const-decoder = "0.4.0"
 const_panic = "0.2.12"
 serde = {workspace = true, optional = true}
+bs58 = "0.5.1"

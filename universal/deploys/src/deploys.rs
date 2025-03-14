@@ -29,9 +29,9 @@ macro_rules! bech32 {
         BYTES
     }};
 }
-macro_rules! b58 {
+macro_rules! b58_32 {
     ($v:literal) => {{
-        const BYTES: &[u8] = &substreams_solana_macro::b58!($v);
+        const BYTES: &[u8] = &bs58::decode($v.as_bytes()).into_array_const_unwrap::<32>();
         BYTES
     }};
 }
@@ -42,6 +42,7 @@ const DUMMY: CoreDeployment = CoreDeployment {
     core_address: &[],
     token_bridge_address: None,
     nft_bridge_address: None,
+    token_router_proxy_address: None,
     vm: Vm::Evm,
     net_env: NetEnv::MainNet,
 };
@@ -185,6 +186,7 @@ macro_rules! nets_group {
         core: $core_address:literal,
         $(token_bridge: $token_bridge_address:literal,)?
         $(nft_bridge: $nft_bridge_address:literal,)?
+        $(token_router_proxy_address: $token_router_proxy_address:literal,)?
         net_env: $net_env:ident,
      }),* $(,)?) => {
 pub mod $modi {
@@ -201,6 +203,7 @@ pub mod $modi {
     #[doc = concat!(" * core address is `\"", $core_address, "\"` ")]
     $(#[doc = concat!(" * token bridge address is `\"", $token_bridge_address, "\"` ")])?
     $(#[doc = concat!(" * nft bridge address is `\"", $nft_bridge_address, "\"` ")])?
+    $(#[doc = concat!(" * token router proxy address is `\"", $token_router_proxy_address, "\"` ")])?
     pub const $name: CoreDeployment = CoreDeployment {
         chain_id: ChainId::Known(KnownChainId::$chain_id),
         name: $name_field,
@@ -212,6 +215,11 @@ pub mod $modi {
         },
         nft_bridge_address: loop {
             $(break Some($decoder!($nft_bridge_address));)?
+            #[allow(unreachable_code)]
+            break None
+        },
+        token_router_proxy_address: loop {
+            $(break Some($decoder!($token_router_proxy_address));)?
             #[allow(unreachable_code)]
             break None
         },
@@ -453,6 +461,7 @@ nets_group! {evm, Evm, EVM_NETS, hex;
         core: "0CBE91CF822c73C2315FB05100C2F714765d5c20",
         token_bridge: "377D55a7928c046E18eEbb61977e714d2a76472a",
         nft_bridge: "51a02d0dcb5e52F5b92bdAA38FA013C91c7309A9",
+        token_router_proxy_address: "a098368AaaDc0FdF3e309cda710D7A5f8BDEeCD9",
         net_env: TestNet,
     },
     FUJI {
@@ -462,6 +471,7 @@ nets_group! {evm, Evm, EVM_NETS, hex;
         core: "7bbcE28e64B3F8b84d876Ab298393c38ad7aac4C",
         token_bridge: "61E44E506Ca5659E6c0bba9b678586fA2d729756",
         nft_bridge: "D601BAf2EEE3C028344471684F6b27E789D9075D",
+        token_router_proxy_address: "8Cd7D7C980cd72eBD16737dC3fa04469dcFcf07A",
         net_env: TestNet,
     },
     OASIS_TESTNET {
@@ -646,6 +656,7 @@ nets_group! {evm, Evm, EVM_NETS, hex;
         core: "4a8bc80Ed5a4067f1CCf107057b8270E0cC11A78",
         token_bridge: "DB5492265f6038831E89f495670FF909aDe94bd9",
         nft_bridge: "6a0B52ac198e4870e5F3797d5B403838a5bbFD99",
+        token_router_proxy_address: "E57D917bf955FedE2888AAbD056202a6497F1882",
         net_env: TestNet,
     },
     ARBITRUM_SEPOLIA {
@@ -655,6 +666,7 @@ nets_group! {evm, Evm, EVM_NETS, hex;
         core: "6b9C8671cdDC8dEab9c719bB87cBd3e782bA6a35",
         token_bridge: "C7A204bDBFe983FCD8d8E61D02b475D4073fF97e",
         nft_bridge: "23908A62110e21C04F3A4e011d24F901F911744A",
+        token_router_proxy_address: "e0418C44F06B0b0D7D1706E01706316DBB0B210E",
         net_env: TestNet,
     },
     BASE_SEPOLIA {
@@ -664,6 +676,7 @@ nets_group! {evm, Evm, EVM_NETS, hex;
         core: "79A1027a6A159502049F10906D333EC57E95F083",
         token_bridge: "86F55A04690fd7815A3D802bD587e83eA888B239",
         nft_bridge: "268557122Ffd64c85750d630b716471118F323c8",
+        token_router_proxy_address: "824Ea687CD1CC2f2446235D33Ae764CbCd08e18C",
         net_env: TestNet,
     },
     OPTIMISM_SEPOLIA {
@@ -673,6 +686,7 @@ nets_group! {evm, Evm, EVM_NETS, hex;
         core: "31377888146f3253211EFEf5c676D41ECe7D58Fe",
         token_bridge: "99737Ec4B815d816c49A385943baf0380e75c0Ac",
         nft_bridge: "27812285fbe85BA1DF242929B906B31EE3dd1b9f",
+        token_router_proxy_address: "6BAa7397c18abe6221b4f6C3Ac91C88a9faE00D8",
         net_env: TestNet,
     },
     HOLESKY {
@@ -718,7 +732,7 @@ nets_group! {evm, Evm, EVM_NETS, hex;
 }
 
 // Solana
-nets_group! {solana, Solana, SOLANA_NETS, b58;
+nets_group! {solana, Solana, SOLANA_NETS, b58_32;
     // MainNets
 
     SOLANA {

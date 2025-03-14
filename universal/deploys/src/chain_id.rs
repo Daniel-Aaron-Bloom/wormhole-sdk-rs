@@ -151,9 +151,39 @@ impl From<KnownChainId> for u16 {
         value.to_u16()
     }
 }
+impl From<KnownChainId> for u32 {
+    fn from(value: KnownChainId) -> Self {
+        value.to_u16().into()
+    }
+}
+impl From<KnownChainId> for u64 {
+    fn from(value: KnownChainId) -> Self {
+        value.to_u16().into()
+    }
+}
+impl From<KnownChainId> for u128 {
+    fn from(value: KnownChainId) -> Self {
+        value.to_u16().into()
+    }
+}
 impl From<UnknownChainId> for u16 {
     fn from(value: UnknownChainId) -> Self {
         value.to_u16()
+    }
+}
+impl From<UnknownChainId> for u32 {
+    fn from(value: UnknownChainId) -> Self {
+        value.to_u16().into()
+    }
+}
+impl From<UnknownChainId> for u64 {
+    fn from(value: UnknownChainId) -> Self {
+        value.to_u16().into()
+    }
+}
+impl From<UnknownChainId> for u128 {
+    fn from(value: UnknownChainId) -> Self {
+        value.to_u16().into()
     }
 }
 
@@ -248,6 +278,21 @@ impl Hash for ChainId {
 impl From<ChainId> for u16 {
     fn from(id: ChainId) -> Self {
         id.to_u16()
+    }
+}
+impl From<ChainId> for u32 {
+    fn from(id: ChainId) -> Self {
+        id.to_u16().into()
+    }
+}
+impl From<ChainId> for u64 {
+    fn from(id: ChainId) -> Self {
+        id.to_u16().into()
+    }
+}
+impl From<ChainId> for u128 {
+    fn from(id: ChainId) -> Self {
+        id.to_u16().into()
     }
 }
 

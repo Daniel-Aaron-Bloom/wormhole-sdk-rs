@@ -21,6 +21,16 @@ impl KnownChainId {
     };
 }
 
+macro_rules! make_from {
+    ($ct:ty, $($it:ty),+) => {$(
+impl From<$ct> for $it {
+    fn from(id: $ct) -> Self {
+        id.to_u16().into()
+    }
+}
+    )+};
+}
+
 known_chains! {
     Unset = 0,
     Solana = 1,
@@ -151,41 +161,13 @@ impl From<KnownChainId> for u16 {
         value.to_u16()
     }
 }
-impl From<KnownChainId> for u32 {
-    fn from(value: KnownChainId) -> Self {
-        value.to_u16().into()
-    }
-}
-impl From<KnownChainId> for u64 {
-    fn from(value: KnownChainId) -> Self {
-        value.to_u16().into()
-    }
-}
-impl From<KnownChainId> for u128 {
-    fn from(value: KnownChainId) -> Self {
-        value.to_u16().into()
-    }
-}
 impl From<UnknownChainId> for u16 {
     fn from(value: UnknownChainId) -> Self {
         value.to_u16()
     }
 }
-impl From<UnknownChainId> for u32 {
-    fn from(value: UnknownChainId) -> Self {
-        value.to_u16().into()
-    }
-}
-impl From<UnknownChainId> for u64 {
-    fn from(value: UnknownChainId) -> Self {
-        value.to_u16().into()
-    }
-}
-impl From<UnknownChainId> for u128 {
-    fn from(value: UnknownChainId) -> Self {
-        value.to_u16().into()
-    }
-}
+make_from! {KnownChainId, u32, i32, u64, i64, u128, i128}
+make_from! {UnknownChainId, u32, i32, u64, i64, u128, i128}
 
 impl TryFrom<u16> for KnownChainId {
     type Error = UnknownChainId;
@@ -280,21 +262,7 @@ impl From<ChainId> for u16 {
         id.to_u16()
     }
 }
-impl From<ChainId> for u32 {
-    fn from(id: ChainId) -> Self {
-        id.to_u16().into()
-    }
-}
-impl From<ChainId> for u64 {
-    fn from(id: ChainId) -> Self {
-        id.to_u16().into()
-    }
-}
-impl From<ChainId> for u128 {
-    fn from(id: ChainId) -> Self {
-        id.to_u16().into()
-    }
-}
+make_from! {ChainId, u32, i32, u64, i64, u128, i128}
 
 impl From<u16> for ChainId {
     fn from(id: u16) -> Self {

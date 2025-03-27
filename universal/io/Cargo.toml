@@ -19,8 +19,9 @@ alloy = ["dep:alloy-primitives"]
 
 [dependencies]
 alloy-primitives = { workspace = true, optional = true }
-array-util = "1.0.2"
+array-util = "1"
 wormhole-deploys = { workspace = true }
+ruint.workspace = true
 
 [dev-dependencies]
 hex-literal.workspace = true

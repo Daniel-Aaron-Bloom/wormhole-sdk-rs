@@ -1,4 +1,3 @@
-use alloy_primitives::FixedBytes;
 use wormhole_io::deploys::ChainId;
 
 use crate::{EncodedAmount, Readable, TypePrefixedPayload, Writeable};
@@ -8,11 +7,11 @@ use std::io;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TransferWithMessage {
     pub norm_amount: EncodedAmount,
-    pub token_address: FixedBytes<32>,
+    pub token_address: [u8; 32],
     pub token_chain: ChainId,
-    pub redeemer: FixedBytes<32>,
+    pub redeemer: [u8; 32],
     pub redeemer_chain: ChainId,
-    pub sender: FixedBytes<32>,
+    pub sender: [u8; 32],
     pub payload: Vec<u8>,
 }
 
@@ -46,7 +45,13 @@ impl Readable for TransferWithMessage {
 
 impl Writeable for TransferWithMessage {
     fn written_size(&self) -> usize {
-        32 + 32 + 2 + 32 + 2 + 32 + self.payload.len()
+        self.norm_amount.written_size()
+            + self.token_address.written_size()
+            + self.token_chain.written_size()
+            + self.redeemer.written_size()
+            + self.redeemer_chain.written_size()
+            + self.sender.written_size()
+            + self.payload.len()
     }
 
     fn write<W>(&self, writer: &mut W) -> io::Result<()>

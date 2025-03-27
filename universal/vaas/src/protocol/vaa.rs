@@ -1,4 +1,3 @@
-use alloy_primitives::{FixedBytes, U64};
 use wormhole_io::deploys::ChainId;
 
 use crate::{
@@ -7,7 +6,10 @@ use crate::{
 };
 pub use crate::{GuardianSetSig, Readable, Writeable};
 
-use std::io;
+use std::{
+    io,
+    ops::{Deref, DerefMut},
+};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -117,8 +119,8 @@ pub struct VaaBody {
         serde(deserialize_with = "wormhole_io::deploys::chain_id::serde::deserialize_value")
     )]
     pub emitter_chain: ChainId,
-    pub emitter_address: FixedBytes<32>,
-    pub sequence: U64,
+    pub emitter_address: [u8; 32],
+    pub sequence: u64,
     pub consistency_level: u8,
 
     pub payload: PayloadKind,
@@ -126,7 +128,13 @@ pub struct VaaBody {
 
 impl Writeable for VaaBody {
     fn written_size(&self) -> usize {
-        4 + 4 + 2 + 32 + 8 + 1 + self.payload.payload_written_size()
+        self.timestamp.written_size()
+            + self.nonce.written_size()
+            + self.emitter_chain.written_size()
+            + self.emitter_address.written_size()
+            + self.sequence.written_size()
+            + self.consistency_level.written_size()
+            + self.payload.payload_written_size()
     }
 
     fn write<W>(&self, writer: &mut W) -> io::Result<()>
@@ -137,7 +145,7 @@ impl Writeable for VaaBody {
         self.nonce.write(writer)?;
         self.emitter_chain.write(writer)?;
         self.emitter_address.write(writer)?;
-        self.sequence.into_limbs()[0].write(writer)?;
+        self.sequence.write(writer)?;
         self.consistency_level.write(writer)?;
         self.payload.write(writer)?;
         Ok(())
@@ -156,7 +164,7 @@ impl Readable for VaaBody {
             nonce: Readable::read(reader)?,
             emitter_chain: Readable::read(reader)?,
             emitter_address: Readable::read(reader)?,
-            sequence: U64::from_limbs([Readable::read(reader)?]),
+            sequence: Readable::read(reader)?,
             consistency_level: Readable::read(reader)?,
             payload: Readable::read(reader)?,
         })
@@ -185,13 +193,13 @@ impl VaaBody {
     }
 
     #[inline]
-    pub fn digest(&self) -> FixedBytes<32> {
-        utils::keccak256(self.to_vec())
+    pub fn digest(&self) -> MessageHash {
+        MessageHash(utils::keccak256(self.to_vec()))
     }
 
     #[inline]
-    pub fn double_digest(&self) -> FixedBytes<32> {
-        utils::keccak256(self.digest())
+    pub fn double_digest(&self) -> VaaHash {
+        VaaHash(utils::keccak256(self.digest()))
     }
 
     #[cfg(feature = "serde")]
@@ -200,5 +208,66 @@ impl VaaBody {
             PayloadKind::Json(value) => serde_json::from_value(value.clone()).ok(),
             _ => None,
         }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct MessageHash(pub [u8; 32]);
+
+impl From<MessageHash> for VaaHash {
+    fn from(value: MessageHash) -> Self {
+        VaaHash(utils::keccak256(value.0))
+    }
+}
+
+impl Deref for MessageHash {
+    type Target = [u8; 32];
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for MessageHash {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl AsRef<[u8]> for MessageHash {
+    fn as_ref(&self) -> &[u8] {
+        &self.0
+    }
+}
+
+impl AsMut<[u8]> for MessageHash {
+    fn as_mut(&mut self) -> &mut [u8] {
+        &mut self.0
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct VaaHash(pub [u8; 32]);
+
+impl Deref for VaaHash {
+    type Target = [u8; 32];
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for VaaHash {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+impl AsRef<[u8]> for VaaHash {
+    fn as_ref(&self) -> &[u8] {
+        &self.0
+    }
+}
+
+impl AsMut<[u8]> for VaaHash {
+    fn as_mut(&mut self) -> &mut [u8] {
+        &mut self.0
     }
 }

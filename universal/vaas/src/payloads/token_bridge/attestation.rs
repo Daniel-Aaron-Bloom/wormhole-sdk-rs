@@ -1,4 +1,3 @@
-use alloy_primitives::FixedBytes;
 use wormhole_io::deploys::ChainId;
 
 use crate::{Readable, TypePrefixedPayload, Writeable};
@@ -7,12 +6,12 @@ use std::io;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Attestation {
-    pub token_address: FixedBytes<32>,
+    pub token_address: [u8; 32],
     pub token_chain: ChainId,
     pub decimals: u8,
 
-    pub symbol: FixedBytes<32>,
-    pub name: FixedBytes<32>,
+    pub symbol: [u8; 32],
+    pub name: [u8; 32],
 }
 
 impl Attestation {
@@ -66,7 +65,7 @@ impl Writeable for Attestation {
     }
 }
 
-fn fixed32_to_string(fixed: FixedBytes<32>) -> String {
+fn fixed32_to_string(fixed: [u8; 32]) -> String {
     let idx = fixed
         .iter()
         .rposition(|x| *x != 0)
@@ -77,18 +76,18 @@ fn fixed32_to_string(fixed: FixedBytes<32>) -> String {
 
 #[cfg(test)]
 mod test {
-    use alloy_primitives::{FixedBytes, U64};
     use hex_literal::hex;
     use wormhole_io::deploys::KnownChainId;
 
     use crate::{
         payloads::token_bridge::{attestation::fixed32_to_string, TokenBridgeMessage},
+        protocol::vaa::VaaHash,
         Readable, Vaa, Writeable,
     };
 
     #[test]
     fn unicode_truncation_empty() {
-        let converted = FixedBytes::<32>::ZERO;
+        let converted = [0; 32];
         let recovered = fixed32_to_string(converted);
         assert_eq!(recovered, String::new());
     }
@@ -99,7 +98,7 @@ mod test {
         let converted = {
             let mut out = [0; 32];
             out[..input.len()].copy_from_slice(input.as_bytes());
-            FixedBytes::<32>::from(out)
+            out
         };
         let recovered = fixed32_to_string(converted);
         assert_eq!(recovered, String::from("🔥"));
@@ -111,7 +110,7 @@ mod test {
         let converted = {
             let mut out = [0; 32];
             out.copy_from_slice(input.as_bytes());
-            FixedBytes::<32>::from(out)
+            out
         };
         let recovered = fixed32_to_string(converted);
         assert_eq!(recovered, String::from("🔥🔥🔥🔥🔥🔥🔥🔥"));
@@ -123,7 +122,7 @@ mod test {
         let converted = {
             let mut out = [0; 32];
             out.copy_from_slice(&input.as_bytes()[..32]);
-            FixedBytes::<32>::from(out)
+            out
         };
         let recovered = fixed32_to_string(converted);
         assert_eq!(recovered, String::from("🔥🔥🔥🔥🔥🔥🔥🔥"));
@@ -135,7 +134,7 @@ mod test {
         let converted = {
             let mut out = [0; 32];
             out.copy_from_slice(&input.as_bytes()[..32]);
-            FixedBytes::<32>::from(out)
+            out
         };
         let recovered = fixed32_to_string(converted);
         assert_eq!(recovered, String::from("0000000000000000000000000000000�"));
@@ -156,7 +155,7 @@ mod test {
             vaa.body.emitter_address,
             hex!("95f83a27e90c622a98c037353f271fd8f5f57b4dc18ebf5ff75a934724bd0491")
         );
-        assert_eq!(vaa.body.sequence, U64::from(11833801757748136510u64));
+        assert_eq!(vaa.body.sequence, 11833801757748136510u64);
         assert_eq!(vaa.body.consistency_level, 32);
 
         let msg = vaa.body.read_payload::<TokenBridgeMessage>().unwrap();
@@ -175,7 +174,7 @@ mod test {
 
             assert_eq!(
                 vaa.body.double_digest(),
-                FixedBytes(hex!(
+                VaaHash(hex!(
                     "6793c77cc9283df50ab5f2cdd688637d6ba935d4e6baabf46e07b83c55655461"
                 ))
             );

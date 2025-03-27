@@ -1,6 +1,6 @@
-use alloy_primitives::{ruint::UintTryFrom, U256, U8};
+use ruint::UintTryFrom;
 
-use crate::{Readable, Writeable};
+use crate::{utils::U256, Readable, Writeable};
 
 use std::io;
 
@@ -88,7 +88,8 @@ impl Writeable for EncodedAmount {
 }
 
 fn pow10(power: u8) -> U256 {
-    TEN.pow(U256::from(U8::from(power)))
+    // TEN.pow(U256::from(U8::from(power)))
+    TEN.pow(U256::from(power))
 }
 
 #[cfg(test)]

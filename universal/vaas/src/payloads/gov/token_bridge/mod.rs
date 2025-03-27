@@ -8,13 +8,11 @@ mod contract_upgrade;
 pub use contract_upgrade::ContractUpgrade;
 
 use crate::{Readable, TypePrefixedPayload, Writeable};
-use alloy_primitives::FixedBytes;
 use hex_literal::hex;
 
 /// A.K.A. "TokenBridge".
-pub const GOVERNANCE_MODULE: FixedBytes<32> = FixedBytes(hex!(
-    "000000000000000000000000000000000000000000546f6b656e427269646765"
-));
+pub const GOVERNANCE_MODULE: [u8; 32] =
+    hex!("000000000000000000000000000000000000000000546f6b656e427269646765");
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Decree {

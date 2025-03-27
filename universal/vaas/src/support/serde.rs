@@ -3,26 +3,21 @@ use serde::{de, de::SeqAccess, Deserializer, Serialize, Serializer};
 
 pub(crate) mod fixed_bytes_as_array {
     use super::*;
-    use alloy_primitives::FixedBytes;
-
-    pub fn serialize<S, const N: usize>(
-        bytes: &FixedBytes<N>,
-        serializer: S,
-    ) -> Result<S::Ok, S::Error>
+    pub fn serialize<S, const N: usize>(bytes: &[u8; N], serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
         bytes.to_vec().serialize(serializer)
     }
 
-    pub fn deserialize<'de, D, const N: usize>(deserializer: D) -> Result<FixedBytes<N>, D::Error>
+    pub fn deserialize<'de, D, const N: usize>(deserializer: D) -> Result<[u8; N], D::Error>
     where
         D: Deserializer<'de>,
     {
         pub struct FbVisitor<const N: usize>;
 
         impl<'de, const N: usize> de::Visitor<'de> for FbVisitor<N> {
-            type Value = FixedBytes<N>;
+            type Value = [u8; N];
 
             fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
                 formatter.write_str(
@@ -50,7 +45,7 @@ pub(crate) mod fixed_bytes_as_array {
                     }
                 }
 
-                Ok(FixedBytes(bytes))
+                Ok(bytes)
             }
 
             fn visit_str<E>(self, s: &str) -> Result<Self::Value, E>

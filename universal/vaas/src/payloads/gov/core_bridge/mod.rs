@@ -14,13 +14,11 @@ mod transfer_fees;
 pub use transfer_fees::TransferFees;
 
 use crate::{Readable, TypePrefixedPayload, Writeable};
-use alloy_primitives::FixedBytes;
 use hex_literal::hex;
 
 /// A.K.A. "Core".
-pub const GOVERNANCE_MODULE: FixedBytes<32> = FixedBytes(hex!(
-    "00000000000000000000000000000000000000000000000000000000436f7265"
-));
+pub const GOVERNANCE_MODULE: [u8; 32] =
+    hex!("00000000000000000000000000000000000000000000000000000000436f7265");
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Decree {

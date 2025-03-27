@@ -22,10 +22,10 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [workspace.dependencies]
 alloy-primitives = "0.8"
-cfg-if = "1.0"
+cfg-if = "1"
 hex-literal = "1"
-ruint = { version = "1.12", default-features = false }
-serde = "1.0"
-serde_json = "1.0"
+ruint = { version = "1", default-features = false, features = ["alloc"] }
+serde = "1"
+serde_json = "1"
 wormhole-io = { path = "./io" }
 wormhole-deploys = { path = "./deploys" }

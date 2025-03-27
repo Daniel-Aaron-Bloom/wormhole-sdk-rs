@@ -1,11 +1,12 @@
+use io::WriteableSequence;
+
 use crate::{Readable, TypePrefixedPayload, Writeable};
-use alloy_primitives::{Address, FixedBytes};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct GuardianSetUpdate {
-    _gap: FixedBytes<2>, // This should never be encoded with anything.
+    _gap: [u8; 2], // This should never be encoded with anything.
     pub new_index: u32,
-    pub guardians: Vec<Address>,
+    pub guardians: WriteableSequence<u8, Vec<[u8; 20]>>,
 }
 
 impl TypePrefixedPayload for GuardianSetUpdate {
@@ -20,23 +21,18 @@ impl Readable for GuardianSetUpdate {
         Self: Sized,
         R: std::io::Read,
     {
-        let _gap = FixedBytes::<2>::read(reader)?;
-        if _gap != FixedBytes::ZERO {
+        let _gap = Readable::read(reader)?;
+        if _gap != [0; 2] {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidData,
                 "Invalid guardian set update",
             ));
         }
-        let new_index = u32::read(reader)?;
-        let num_guardians = u8::read(reader)?;
-        let guardians: Vec<_> = (0..num_guardians)
-            .filter_map(|_| Address::read(reader).ok())
-            .collect();
 
         Ok(Self {
             _gap,
-            new_index,
-            guardians,
+            new_index: Readable::read(reader)?,
+            guardians: Readable::read(reader)?,
         })
     }
 }

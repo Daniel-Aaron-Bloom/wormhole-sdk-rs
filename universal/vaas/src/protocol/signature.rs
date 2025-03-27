@@ -1,5 +1,3 @@
-use alloy_primitives::FixedBytes;
-
 use crate::{Readable, Writeable};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -11,7 +9,7 @@ pub struct GuardianSetSig {
         feature = "serde",
         serde(with = "crate::support::serde::fixed_bytes_as_array")
     )]
-    pub signature: FixedBytes<65>,
+    pub signature: [u8; 65],
 }
 
 impl GuardianSetSig {

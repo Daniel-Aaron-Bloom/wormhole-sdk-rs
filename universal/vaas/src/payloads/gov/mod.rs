@@ -6,15 +6,13 @@ pub use core_bridge::{
 pub mod token_bridge;
 pub use token_bridge::RegisterChain;
 
-use alloy_primitives::FixedBytes;
 use hex_literal::hex;
 
 use crate::{Readable, TypePrefixedPayload, Writeable};
 
 pub const GOVERNANCE_CHAIN: u16 = 1;
-pub const GOVERNANCE_EMITTER: FixedBytes<32> = FixedBytes(hex!(
-    "0000000000000000000000000000000000000000000000000000000000000004"
-));
+pub const GOVERNANCE_EMITTER: [u8; 32] =
+    hex!("0000000000000000000000000000000000000000000000000000000000000004");
 
 /// The [specification] for Governance messages is the following:
 /// - module (32 bytes)
@@ -32,7 +30,7 @@ pub const GOVERNANCE_EMITTER: FixedBytes<32> = FixedBytes(hex!(
 /// [specification]: https://docs.wormhole.com/wormhole/explore-wormhole/vaa#governance
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct GovernanceHeader {
-    pub module: FixedBytes<32>,
+    pub module: [u8; 32],
 }
 
 impl Readable for GovernanceHeader {
@@ -43,7 +41,7 @@ impl Readable for GovernanceHeader {
         R: std::io::Read,
     {
         Ok(Self {
-            module: FixedBytes::read(reader)?,
+            module: Readable::read(reader)?,
         })
     }
 }

@@ -1,4 +1,3 @@
-use alloy_primitives::FixedBytes;
 use wormhole_io::deploys::ChainId;
 
 use crate::{Readable, TypePrefixedPayload, Writeable};
@@ -11,9 +10,9 @@ pub struct RegisterChain {
     /// empty.
     ///
     /// [`Governanceheader`]: crate::payloads::gov::GovernanceHeader
-    _gap: FixedBytes<2>,
+    _gap: [u8; 2],
     pub foreign_chain: ChainId,
-    pub foreign_emitter: FixedBytes<32>,
+    pub foreign_emitter: [u8; 32],
 }
 
 impl TypePrefixedPayload for RegisterChain {
@@ -28,8 +27,8 @@ impl Readable for RegisterChain {
         Self: Sized,
         R: std::io::Read,
     {
-        let _gap = FixedBytes::<2>::read(reader)?;
-        if _gap != FixedBytes::ZERO {
+        let _gap = Readable::read(reader)?;
+        if _gap != [0; 2] {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidData,
                 "Invalid register chain",

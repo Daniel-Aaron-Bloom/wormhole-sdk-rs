@@ -1,4 +1,3 @@
-use alloy_primitives::FixedBytes;
 use wormhole_io::deploys::ChainId;
 
 use crate::{EncodedAmount, Readable, TypePrefixedPayload, Writeable};
@@ -8,9 +7,9 @@ use std::io;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Transfer {
     pub norm_amount: EncodedAmount,
-    pub token_address: FixedBytes<32>,
+    pub token_address: [u8; 32],
     pub token_chain: ChainId,
-    pub recipient: FixedBytes<32>,
+    pub recipient: [u8; 32],
     pub recipient_chain: ChainId,
     pub norm_relayer_fee: EncodedAmount,
 }
@@ -60,8 +59,7 @@ impl Writeable for Transfer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{payloads::token_bridge::TokenBridgeMessage, Vaa};
-    use alloy_primitives::U64;
+    use crate::{payloads::token_bridge::TokenBridgeMessage, protocol::vaa::VaaHash, Vaa};
     use hex_literal::hex;
     use wormhole_io::deploys::KnownChainId;
 
@@ -85,11 +83,13 @@ mod tests {
             vaa.body.emitter_address,
             hex!("c69a1b1a65dd336bf1df6a77afb501fc25db7fc0938cb08595a9ef473265cb4f")
         );
-        assert_eq!(vaa.body.sequence, U64::from(3));
+        assert_eq!(vaa.body.sequence, 3);
         assert_eq!(vaa.body.consistency_level, 32);
         assert_eq!(
             vaa.body.double_digest(),
-            hex!("2862e5873955ea104bb3e122831bdc43bbcb413da5b1123514640b950d038967")
+            VaaHash(hex!(
+                "2862e5873955ea104bb3e122831bdc43bbcb413da5b1123514640b950d038967"
+            )),
         );
 
         let msg = vaa.body.read_payload::<TokenBridgeMessage>().unwrap();
@@ -142,11 +142,13 @@ mod tests {
             vaa.body.emitter_address,
             hex!("ec7372995d5cc8732397fb0ad35c0121e0eaa90d26f828a534cab54391b3a4f5")
         );
-        assert_eq!(vaa.body.sequence, U64::from(110277));
+        assert_eq!(vaa.body.sequence, 110277);
         assert_eq!(vaa.body.consistency_level, 32);
         assert_eq!(
             vaa.body.double_digest(),
-            hex!("c90519b2bdfacac401d2d2c15a329d4e33e8ca15862685f0220ddc6074d7def5")
+            VaaHash(hex!(
+                "c90519b2bdfacac401d2d2c15a329d4e33e8ca15862685f0220ddc6074d7def5"
+            )),
         );
 
         let msg = vaa.body.read_payload::<TokenBridgeMessage>().unwrap();

@@ -10,16 +10,17 @@ homepage.workspace = true
 repository.workspace = true
 
 [dependencies]
-wormhole-io = { workspace = true, features = ["alloy"] }
-
-alloy-primitives.workspace = true
+alloy-primitives= { workspace = true, optional = true }
 hex-literal.workspace = true
-
+ruint.workspace = true
 serde = {workspace = true, optional = true, features = ["derive"]}
 serde_json = { workspace = true, optional = true }
+wormhole-io = { workspace = true }
+sha3 = "0.10"
 
 [dev-dependencies]
 
 [features]
 default = []
+alloy = ["dep:alloy-primitives", "wormhole-io/alloy"]
 serde = ["dep:serde", "dep:serde_json", "alloy-primitives/serde", "wormhole-io/serde"]

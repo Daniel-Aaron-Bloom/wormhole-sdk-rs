@@ -1,14 +1,13 @@
 use std::{
-    array, io, iter,
+    array,
+    hash::Hash,
+    io, iter,
     marker::PhantomData,
     mem,
     ops::{Deref, DerefMut},
 };
 
 use wormhole_deploys::ChainId;
-
-#[cfg(feature = "alloy")]
-use alloy_primitives::{Address, FixedBytes, Uint};
 
 pub trait Readable: Sized {
     const SIZE: Option<usize>;
@@ -356,6 +355,17 @@ where
     sequence: Sequence,
 }
 
+impl<Length, Sequence> Hash for WriteableSequence<Length, Sequence>
+where
+    usize: TryInto<Length>,
+    for<'a> &'a Sequence: IntoIterator<IntoIter: ExactSizeIterator>,
+    Sequence: ?Sized + Hash,
+{
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.sequence.hash(state)
+    }
+}
+
 impl<Length, Sequence> WriteableSequence<Length, Sequence>
 where
     usize: TryInto<Length>,
@@ -479,8 +489,40 @@ where
     }
 }
 
+impl<const BITS: usize, const LIMBS: usize> Readable for ruint::Uint<BITS, LIMBS> {
+    const SIZE: Option<usize> = Some(BITS.div_ceil(8));
+
+    fn read<R>(reader: &mut R) -> io::Result<Self>
+    where
+        R: io::Read,
+    {
+        let mut buf = [0u8; BITS];
+        let buf = &mut buf[0..BITS.div_ceil(8)];
+        reader.read_exact(buf)?;
+        Ok(Self::from_be_slice(buf))
+    }
+}
+
+impl<const BITS: usize, const LIMBS: usize> Writeable for ruint::Uint<BITS, LIMBS> {
+    fn written_size(&self) -> usize {
+        <Self as Readable>::SIZE.unwrap()
+    }
+
+    fn write<W>(&self, writer: &mut W) -> io::Result<()>
+    where
+        W: io::Write,
+    {
+        let mut buf = [0u8; BITS];
+        let buf = &mut buf[0..BITS.div_ceil(8)];
+        self.copy_be_bytes_to(buf);
+        writer.write_all(buf)
+    }
+}
+
 #[cfg(feature = "alloy")]
 const _: () = {
+    use alloy_primitives::{Address, FixedBytes};
+
     impl<const N: usize> Readable for FixedBytes<N> {
         const SIZE: Option<usize> = Some(N);
 
@@ -504,36 +546,6 @@ const _: () = {
             W: io::Write,
         {
             writer.write_all(&self.0)
-        }
-    }
-
-    impl<const BITS: usize, const LIMBS: usize> Readable for Uint<BITS, LIMBS> {
-        const SIZE: Option<usize> = Some(BITS.div_ceil(8));
-
-        fn read<R>(reader: &mut R) -> io::Result<Self>
-        where
-            R: io::Read,
-        {
-            let mut buf = [0u8; BITS];
-            let buf = &mut buf[0..BITS.div_ceil(8)];
-            reader.read_exact(buf)?;
-            Ok(Uint::from_be_slice(buf))
-        }
-    }
-
-    impl<const BITS: usize, const LIMBS: usize> Writeable for Uint<BITS, LIMBS> {
-        fn written_size(&self) -> usize {
-            <Self as Readable>::SIZE.unwrap()
-        }
-
-        fn write<W>(&self, writer: &mut W) -> io::Result<()>
-        where
-            W: io::Write,
-        {
-            let mut buf = [0u8; BITS];
-            let buf = &mut buf[0..BITS.div_ceil(8)];
-            self.copy_be_bytes_to(buf);
-            writer.write_all(buf)
         }
     }
 

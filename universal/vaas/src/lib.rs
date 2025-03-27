@@ -9,7 +9,7 @@ pub mod utils;
 pub use protocol::{
     encoded_types::EncodedAmount,
     signature::GuardianSetSig,
-    vaa::{Vaa, VaaBody, VaaHeader},
+    vaa::{MessageHash, Vaa, VaaBody, VaaHash, VaaHeader},
 };
 pub use utils::{keccak256, quorum};
 pub use wormhole_io::{Readable, TypePrefixedPayload, Writeable};

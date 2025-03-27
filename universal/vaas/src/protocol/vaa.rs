@@ -7,7 +7,7 @@ use crate::{
 pub use crate::{GuardianSetSig, Readable, Writeable};
 
 use std::{
-    io,
+    fmt, io,
     ops::{Deref, DerefMut},
 };
 
@@ -220,6 +220,15 @@ impl From<MessageHash> for VaaHash {
     }
 }
 
+impl fmt::Display for MessageHash {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for byte in self.0 {
+            write!(f, "{byte:02x}")?;
+        }
+        Ok(())
+    }
+}
+
 impl Deref for MessageHash {
     type Target = [u8; 32];
     fn deref(&self) -> &Self::Target {
@@ -247,6 +256,15 @@ impl AsMut<[u8]> for MessageHash {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct VaaHash(pub [u8; 32]);
+
+impl fmt::Display for VaaHash {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for byte in self.0 {
+            write!(f, "{byte:02x}")?;
+        }
+        Ok(())
+    }
+}
 
 impl Deref for VaaHash {
     type Target = [u8; 32];

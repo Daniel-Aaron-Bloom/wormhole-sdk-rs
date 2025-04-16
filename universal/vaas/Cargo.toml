@@ -16,11 +16,11 @@ ruint.workspace = true
 serde = {workspace = true, optional = true, features = ["derive"]}
 serde_json = { workspace = true, optional = true }
 wormhole-io = { workspace = true }
-sha3 = "0.10"
+sha3 = { version = "0.10", optional = true }
 
 [dev-dependencies]
 
 [features]
-default = []
+default = ["sha3"]
 alloy = ["dep:alloy-primitives", "wormhole-io/alloy"]
 serde = ["dep:serde", "dep:serde_json", "alloy-primitives/serde", "wormhole-io/serde"]
